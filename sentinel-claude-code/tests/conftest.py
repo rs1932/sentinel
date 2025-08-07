@@ -74,10 +74,71 @@ def override_get_db(test_session):
     return _override_get_db
 
 @pytest.fixture(scope="function")
-def client(override_get_db):
+def client(override_get_db, test_session):
     from src.main import app
+    from src.models.tenant import Tenant
+    from src.models.user import User
+    from src.utils.password import PasswordManager
+    from uuid import uuid4, UUID
     
     app.dependency_overrides[get_db] = override_get_db
+    
+    # Create test tenant and users for authentication
+    password_manager = PasswordManager()
+    
+    # Create platform tenant
+    platform_tenant = Tenant(
+        id=UUID("00000000-0000-0000-0000-000000000000"),
+        name="Sentinel Platform",
+        code="PLATFORM", 
+        type="root",
+        isolation_mode="dedicated",
+        is_active=True,
+        settings={"is_platform_tenant": True},
+        features=[],
+        metadata={}
+    )
+    test_session.add(platform_tenant)
+    
+    # Create test tenant
+    test_tenant = Tenant(
+        id=UUID("f3c417f3-d9f6-44e6-912a-442e02f15e15"),
+        name="Test Company",
+        code="TEST",
+        type="root", 
+        isolation_mode="shared",
+        is_active=True,
+        settings={"max_users": 100},
+        features=["authentication", "user_management"],
+        metadata={}
+    )
+    test_session.add(test_tenant)
+    
+    # Create admin user
+    admin_user = User(
+        id=uuid4(),
+        tenant_id=platform_tenant.id,
+        email="admin@sentinel.com",
+        username="admin",
+        password_hash=password_manager.hash_password("Admin123!@#"),
+        is_service_account=False,
+        is_active=True
+    )
+    test_session.add(admin_user)
+    
+    # Create regular test user
+    test_user = User(
+        id=uuid4(),
+        tenant_id=test_tenant.id,
+        email="test@example.com",
+        username="testuser",
+        password_hash=password_manager.hash_password("password123"),
+        is_service_account=False,
+        is_active=True
+    )
+    test_session.add(test_user)
+    
+    test_session.commit()
     
     with TestClient(app) as test_client:
         yield test_client
@@ -120,12 +181,14 @@ def test_user_data(test_user_id, test_tenant_id):
     }
 
 @pytest.fixture
-def auth_headers(client, test_user_data):
+def auth_headers(client):
+    """Get authentication headers for regular user with read permissions"""
     response = client.post(
         "/api/v1/auth/login",
         json={
-            "email": test_user_data["email"],
-            "password": "Test123!@#"
+            "email": "test@example.com",
+            "password": "password123",
+            "tenant_code": "TEST"
         }
     )
     if response.status_code == 200:
@@ -135,14 +198,50 @@ def auth_headers(client, test_user_data):
 
 @pytest.fixture
 def superadmin_headers(client):
+    """Get authentication headers for superadmin with full permissions"""
     response = client.post(
         "/api/v1/auth/login",
         json={
             "email": "admin@sentinel.com",
-            "password": "Admin123!@#"
+            "password": "Admin123!@#",
+            "tenant_code": "PLATFORM"
         }
     )
     if response.status_code == 200:
         token = response.json()["access_token"]
         return {"Authorization": f"Bearer {token}"}
     return {}
+
+@pytest.fixture
+def service_account_headers(client):
+    """Get authentication headers for service account with admin permissions"""
+    response = client.post(
+        "/api/v1/auth/token",
+        json={
+            "client_id": "service@example.com",
+            "client_secret": "test-service-key-123",
+            "scope": "tenant:read tenant:write tenant:admin"
+        }
+    )
+    if response.status_code == 200:
+        token = response.json()["access_token"]
+        return {"Authorization": f"Bearer {token}"}
+    return {}
+
+def get_auth_token(client, credentials: dict) -> str:
+    """Helper function to get authentication token"""
+    if "client_id" in credentials:
+        # Service account login
+        response = client.post("/api/v1/auth/token", json=credentials)
+    else:
+        # Regular user login
+        response = client.post("/api/v1/auth/login", json=credentials)
+    
+    if response.status_code == 200:
+        return response.json()["access_token"]
+    
+    raise Exception(f"Authentication failed: {response.status_code} - {response.text}")
+
+def get_auth_headers(token: str) -> dict:
+    """Helper function to format authentication headers"""
+    return {"Authorization": f"Bearer {token}"}

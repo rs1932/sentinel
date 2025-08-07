@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from uuid import UUID
 
-from src.core.database import get_db_session
+from src.database import get_db
 from src.services.authentication import AuthenticationService
 from src.schemas.auth import UserTokenInfo
 
@@ -30,7 +30,7 @@ class CurrentUser:
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db)
 ) -> CurrentUser:
     """
     Get current authenticated user from JWT token
@@ -48,7 +48,7 @@ async def get_current_user(
         )
     
     auth_service = AuthenticationService(db)
-    validation = await auth_service.validate_token(credentials.credentials)
+    validation = auth_service.validate_token(credentials.credentials)
     
     if not validation.valid:
         raise HTTPException(
@@ -86,7 +86,7 @@ async def get_current_user(
 
 async def get_current_user_optional(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db)
 ) -> Optional[CurrentUser]:
     """
     Get current authenticated user from JWT token, but don't raise exception if missing
@@ -106,7 +106,7 @@ def require_scopes(*required_scopes: str):
     """
     Dependency to require specific scopes
     """
-    async def scope_checker(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    def scope_checker(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
         user_scopes = set(current_user.scopes)
         missing_scopes = [scope for scope in required_scopes if scope not in user_scopes]
         
@@ -128,7 +128,7 @@ def require_service_account():
     """
     Dependency to require service account authentication
     """
-    async def service_account_checker(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    def service_account_checker(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
         if not current_user.is_service_account:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -147,7 +147,7 @@ def require_tenant(tenant_id: UUID):
     """
     Dependency to require specific tenant context
     """
-    async def tenant_checker(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    def tenant_checker(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
         if current_user.tenant_id != tenant_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

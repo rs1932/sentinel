@@ -23,7 +23,7 @@ class BaseModel(Base):
                 # Subclasses can override to handle specific cases
                 continue
 
-            if isinstance(value, uuid.UUID):
+            if isinstance(value, UUID):
                 result[column.name] = str(value)
             elif hasattr(value, 'isoformat'):
                 result[column.name] = value.isoformat()

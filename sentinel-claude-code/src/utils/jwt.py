@@ -276,7 +276,7 @@ class TokenBlacklistManager:
     def __init__(self, jwt_manager: JWTManager):
         self.jwt_manager = jwt_manager
     
-    async def blacklist_token(self, token: str, token_type: str = "access") -> str:
+    def blacklist_token(self, token: str, token_type: str = "access") -> str:
         """Add token to blacklist and return JTI"""
         jti = self.jwt_manager.extract_jti(token)
         if not jti:
@@ -291,7 +291,7 @@ class TokenBlacklistManager:
         # For now, return the JTI that should be blacklisted
         return jti
     
-    async def is_token_blacklisted(self, token: str) -> bool:
+    def is_token_blacklisted(self, token: str) -> bool:
         """Check if token is blacklisted"""
         jti = self.jwt_manager.extract_jti(token)
         if not jti:

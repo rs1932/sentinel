@@ -3,6 +3,7 @@ Token service for JWT token operations and management
 """
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
+from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, and_, or_
 import uuid
@@ -65,9 +66,9 @@ class TokenService:
             claims = self.jwt_manager.validate_access_token(token)
             
             return UserTokenInfo(
-                user_id=uuid.UUID(claims["sub"]),
+                user_id=UUID(claims["sub"]),
                 email=claims["email"],
-                tenant_id=uuid.UUID(claims["tenant_id"]),
+                tenant_id=UUID(claims["tenant_id"]),
                 tenant_code=claims["tenant_code"],
                 is_service_account=claims.get("is_service_account", False),
                 scopes=claims.get("scopes", [])
@@ -75,7 +76,7 @@ class TokenService:
         except Exception:
             return None
     
-    async def get_user_active_tokens(self, user_id: uuid.UUID) -> List[RefreshTokenInfo]:
+    async def get_user_active_tokens(self, user_id: UUID) -> List[RefreshTokenInfo]:
         """
         Get all active refresh tokens for a user
         """
@@ -103,8 +104,8 @@ class TokenService:
     
     async def revoke_user_tokens(
         self,
-        user_id: uuid.UUID,
-        token_id: Optional[uuid.UUID] = None,
+        user_id: UUID,
+        token_id: Optional[UUID] = None,
         keep_current_session: Optional[str] = None
     ) -> int:
         """
@@ -178,7 +179,7 @@ class TokenService:
         try:
             # Validate old token
             claims = self.jwt_manager.validate_refresh_token(old_token)
-            user_id = uuid.UUID(claims["sub"])
+            user_id = UUID(claims["sub"])
             
             # Find stored refresh token
             token_hash = self._hash_token(old_token)
@@ -296,7 +297,7 @@ class TokenService:
         )
         return result.scalar_one_or_none() is not None
     
-    async def get_token_statistics(self, user_id: Optional[uuid.UUID] = None) -> Dict[str, Any]:
+    async def get_token_statistics(self, user_id: Optional[UUID] = None) -> Dict[str, Any]:
         """
         Get token usage statistics
         """
@@ -376,14 +377,14 @@ class TokenService:
                 if missing_scopes:
                     return TokenValidationResponse(
                         valid=False,
-                        user_id=uuid.UUID(claims["sub"]),
-                        tenant_id=uuid.UUID(claims["tenant_id"])
+                        user_id=UUID(claims["sub"]),
+                        tenant_id=UUID(claims["tenant_id"])
                     )
             
             return TokenValidationResponse(
                 valid=True,
-                user_id=uuid.UUID(claims["sub"]),
-                tenant_id=uuid.UUID(claims["tenant_id"]),
+                user_id=UUID(claims["sub"]),
+                tenant_id=UUID(claims["tenant_id"]),
                 scopes=token_scopes,
                 expires_at=datetime.fromtimestamp(claims["exp"]),
                 is_service_account=claims.get("is_service_account", False)

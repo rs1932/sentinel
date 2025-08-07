@@ -1,8 +1,8 @@
 from typing import List, Optional, Dict, Any
 from uuid import UUID
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import and_, or_, func
+from sqlalchemy import and_, or_, func, select
 import logging
 
 from src.models.tenant import Tenant, TenantType, IsolationMode
@@ -21,18 +21,20 @@ logger = logging.getLogger(__name__)
 
 class TenantService:
     
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
     
     async def create_tenant(self, tenant_data: TenantCreate) -> Tenant:
-        existing = self.db.query(Tenant).filter(Tenant.code == tenant_data.code).first()
+        result = await self.db.execute(select(Tenant).where(Tenant.code == tenant_data.code))
+        existing = result.scalar_one_or_none()
         if existing:
             raise ConflictError(f"Tenant with code '{tenant_data.code}' already exists")
         
         if tenant_data.parent_tenant_id:
-            parent = self.db.query(Tenant).filter(
+            result = await self.db.execute(select(Tenant).where(
                 Tenant.id == tenant_data.parent_tenant_id
-            ).first()
+            ))
+            parent = result.scalar_one_or_none()
             if not parent:
                 raise NotFoundError(f"Parent tenant with ID {tenant_data.parent_tenant_id} not found")
             if not parent.is_active:
@@ -40,12 +42,15 @@ class TenantService:
         
         # Convert the Pydantic model to dict, which will have 'metadata' field
         # The Tenant.__init__ will handle mapping metadata → tenant_metadata
-        tenant = Tenant(**tenant_data.dict())
+        tenant_dict = tenant_data.dict()
+        # Since we use use_enum_values=True, dict() returns strings
+        # The Tenant.__init__ will convert them back to enums
+        tenant = Tenant(**tenant_dict)
         
         try:
             self.db.add(tenant)
-            self.db.commit()
-            self.db.refresh(tenant)
+            await self.db.commit()
+            await self.db.refresh(tenant)
             
             await cache_service.delete(f"tenant:{tenant.code}")
             await cache_service.delete(f"tenant:{tenant.id}")
@@ -53,7 +58,7 @@ class TenantService:
             logger.info(f"Created tenant: {tenant.code} (ID: {tenant.id})")
             return tenant
         except IntegrityError as e:
-            self.db.rollback()
+            await self.db.rollback()
             logger.error(f"Failed to create tenant: {str(e)}")
             raise ConflictError(f"Failed to create tenant: {str(e)}")
     
@@ -63,7 +68,8 @@ class TenantService:
         if cached:
             return Tenant(**cached)
         
-        tenant = self.db.query(Tenant).filter(Tenant.id == tenant_id).first()
+        result = await self.db.execute(select(Tenant).where(Tenant.id == tenant_id))
+        tenant = result.scalar_one_or_none()
         if not tenant:
             raise NotFoundError(f"Tenant with ID {tenant_id} not found")
         
@@ -76,7 +82,8 @@ class TenantService:
         if cached:
             return Tenant(**cached)
         
-        tenant = self.db.query(Tenant).filter(Tenant.code == code).first()
+        result = await self.db.execute(select(Tenant).where(Tenant.code == code))
+        tenant = result.scalar_one_or_none()
         if not tenant:
             raise NotFoundError(f"Tenant with code '{code}' not found")
         
@@ -84,22 +91,24 @@ class TenantService:
         return tenant
     
     async def list_tenants(self, query: TenantQuery) -> TenantListResponse:
-        q = self.db.query(Tenant)
+        stmt = select(Tenant)
         
         if query.name:
-            q = q.filter(Tenant.name.ilike(f"%{query.name}%"))
+            stmt = stmt.where(Tenant.name.ilike(f"%{query.name}%"))
         if query.code:
-            q = q.filter(Tenant.code.ilike(f"%{query.code}%"))
+            stmt = stmt.where(Tenant.code.ilike(f"%{query.code}%"))
         if query.type:
-            q = q.filter(Tenant.type == query.type)
+            stmt = stmt.where(Tenant.type == query.type)
         if query.parent_tenant_id:
-            q = q.filter(Tenant.parent_tenant_id == query.parent_tenant_id)
+            stmt = stmt.where(Tenant.parent_tenant_id == query.parent_tenant_id)
         if query.is_active is not None:
-            q = q.filter(Tenant.is_active == query.is_active)
+            stmt = stmt.where(Tenant.is_active == query.is_active)
         
-        total = q.count()
+        count_result = await self.db.execute(select(func.count()).select_from(stmt.subquery()))
+        total = count_result.scalar()
         
-        tenants = q.offset(query.offset).limit(query.limit).all()
+        result = await self.db.execute(stmt.offset(query.offset).limit(query.limit))
+        tenants = result.scalars().all()
         
         return TenantListResponse(
             items=[TenantResponse(**t.to_dict()) for t in tenants],
@@ -110,7 +119,8 @@ class TenantService:
     
     async def update_tenant(self, tenant_id: UUID, update_data: TenantUpdate) -> Tenant:
         # Query the tenant directly to ensure it's in the current session
-        tenant = self.db.query(Tenant).filter(Tenant.id == tenant_id).first()
+        result = await self.db.execute(select(Tenant).where(Tenant.id == tenant_id))
+        tenant = result.scalar_one_or_none()
         if not tenant:
             raise NotFoundError(f"Tenant with ID {tenant_id} not found")
         
@@ -127,8 +137,8 @@ class TenantService:
             setattr(tenant, key, value)
         
         try:
-            self.db.commit()
-            self.db.refresh(tenant)
+            await self.db.commit()
+            await self.db.refresh(tenant)
             
             await cache_service.delete(f"tenant:{tenant.code}")
             await cache_service.delete(f"tenant:{tenant.id}")
@@ -136,22 +146,24 @@ class TenantService:
             logger.info(f"Updated tenant: {tenant.code} (ID: {tenant.id})")
             return tenant
         except IntegrityError as e:
-            self.db.rollback()
+            await self.db.rollback()
             logger.error(f"Failed to update tenant: {str(e)}")
             raise ConflictError(f"Failed to update tenant: {str(e)}")
     
     async def delete_tenant(self, tenant_id: UUID) -> bool:
         # Query the tenant directly without using get_tenant to avoid session issues
-        tenant = self.db.query(Tenant).filter(Tenant.id == tenant_id).first()
+        result = await self.db.execute(select(Tenant).where(Tenant.id == tenant_id))
+        tenant = result.scalar_one_or_none()
         if not tenant:
             raise NotFoundError(f"Tenant with ID {tenant_id} not found")
         
         if tenant.code == "PLATFORM":
             raise ValidationError("Platform tenant cannot be deleted")
         
-        sub_tenants_count = self.db.query(Tenant).filter(
+        count_result = await self.db.execute(select(func.count(Tenant.id)).where(
             Tenant.parent_tenant_id == tenant_id
-        ).count()
+        ))
+        sub_tenants_count = count_result.scalar()
         
         if sub_tenants_count > 0:
             raise ValidationError(f"Cannot delete tenant with {sub_tenants_count} sub-tenants")
@@ -160,8 +172,8 @@ class TenantService:
         tenant_code = tenant.code
         
         try:
-            self.db.delete(tenant)
-            self.db.commit()
+            await self.db.delete(tenant)
+            await self.db.commit()
             
             await cache_service.delete(f"tenant:{tenant_code}")
             await cache_service.delete(f"tenant:{tenant_id}")
@@ -169,7 +181,7 @@ class TenantService:
             logger.info(f"Deleted tenant: {tenant_code} (ID: {tenant_id})")
             return True
         except IntegrityError as e:
-            self.db.rollback()
+            await self.db.rollback()
             logger.error(f"Failed to delete tenant: {str(e)}")
             raise ConflictError(f"Failed to delete tenant due to existing dependencies")
     
@@ -198,17 +210,19 @@ class TenantService:
     async def get_tenant_detail(self, tenant_id: UUID) -> TenantDetailResponse:
         tenant = await self.get_tenant(tenant_id)
         
-        sub_tenants_count = self.db.query(func.count(Tenant.id)).filter(
+        count_result = await self.db.execute(select(func.count(Tenant.id)).where(
             Tenant.parent_tenant_id == tenant_id
-        ).scalar()
+        ))
+        sub_tenants_count = count_result.scalar()
         
         # For now, skip user count since User model doesn't exist yet
         users_count = 0
         try:
             from src.models.user import User
-            users_count = self.db.query(func.count(User.id)).filter(
+            count_result = await self.db.execute(select(func.count(User.id)).where(
                 User.tenant_id == tenant_id
-            ).scalar() or 0
+            ))
+            users_count = count_result.scalar() or 0
         except ImportError:
             # User model not implemented yet
             pass
@@ -234,8 +248,8 @@ class TenantService:
                 raise ValidationError("Cannot activate sub-tenant when parent is inactive")
         
         tenant.is_active = True
-        self.db.commit()
-        self.db.refresh(tenant)
+        await self.db.commit()
+        await self.db.refresh(tenant)
         
         await cache_service.delete(f"tenant:{tenant.code}")
         await cache_service.delete(f"tenant:{tenant.id}")
@@ -252,19 +266,20 @@ class TenantService:
         if not tenant.is_active:
             raise ValidationError("Tenant is already inactive")
         
-        active_sub_tenants = self.db.query(Tenant).filter(
+        count_result = await self.db.execute(select(func.count(Tenant.id)).where(
             and_(
                 Tenant.parent_tenant_id == tenant_id,
                 Tenant.is_active == True
             )
-        ).count()
+        ))
+        active_sub_tenants = count_result.scalar()
         
         if active_sub_tenants > 0:
             raise ValidationError(f"Cannot deactivate tenant with {active_sub_tenants} active sub-tenants")
         
         tenant.is_active = False
-        self.db.commit()
-        self.db.refresh(tenant)
+        await self.db.commit()
+        await self.db.refresh(tenant)
         
         await cache_service.delete(f"tenant:{tenant.code}")
         await cache_service.delete(f"tenant:{tenant.id}")

@@ -15,6 +15,7 @@ from src.middleware.error_handler import (
 )
 from src.utils.exceptions import SentinelException
 from src.api.v1 import api_router
+from src.middleware.auth import AuthenticationMiddleware, TenantContextMiddleware, SecurityHeadersMiddleware
 
 structlog.configure(
     processors=[
@@ -57,6 +58,11 @@ if settings.CORS_ENABLED:
         allow_methods=settings.CORS_ALLOW_METHODS,
         allow_headers=settings.CORS_ALLOW_HEADERS,
     )
+
+# Add authentication and security middleware
+app.add_middleware(AuthenticationMiddleware)
+app.add_middleware(TenantContextMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)

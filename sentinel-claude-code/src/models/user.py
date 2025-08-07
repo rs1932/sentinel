@@ -34,6 +34,10 @@ class User(MetadataMixin, BaseModel):
     attributes = Column(JSON, default=dict)  # User attributes for ABAC
     preferences = Column(JSON, default=dict)  # UI preferences, etc.
     
+    # Profile information
+    avatar_url = Column(String(500), nullable=True)  # URL to avatar image
+    avatar_file_id = Column(String(255), nullable=True)  # Internal file reference
+    
     # Authentication tracking
     last_login = Column(DateTime(timezone=True), nullable=True)
     login_count = Column('login_count', Integer, default=0, nullable=True)
@@ -46,6 +50,7 @@ class User(MetadataMixin, BaseModel):
     # Relationships
     tenant = relationship("Tenant", back_populates="users")
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
+    role_assignments = relationship("UserRole", foreign_keys="UserRole.user_id", back_populates="user", cascade="all, delete-orphan")
     
     def __init__(self, **kwargs):
         # Handle service account initialization
@@ -61,7 +66,7 @@ class User(MetadataMixin, BaseModel):
         result = {}
         for column in self.__table__.columns:
             value = getattr(self, column.name)
-            if isinstance(value, uuid.UUID):
+            if isinstance(value, UUID):
                 result[column.name] = str(value)
             elif hasattr(value, 'isoformat'):
                 result[column.name] = value.isoformat() if value else None

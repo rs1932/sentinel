@@ -50,7 +50,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                     
                     # Check if token is blacklisted
                     jti = jwt_manager.extract_jti(token)
-                    if jti and await blacklist_manager.is_token_blacklisted(token):
+                    if jti and blacklist_manager.is_token_blacklisted(token):
                         return JSONResponse(
                             status_code=status.HTTP_401_UNAUTHORIZED,
                             content={

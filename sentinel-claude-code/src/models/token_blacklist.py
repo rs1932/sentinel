@@ -43,8 +43,8 @@ class TokenBlacklist(BaseModel):
         jti: str,
         token_type: str,
         expires_at: datetime,
-        user_id: uuid.UUID = None,
-        revoked_by: uuid.UUID = None,
+        user_id: UUID = None,
+        revoked_by: UUID = None,
         reason: str = None
     ) -> 'TokenBlacklist':
         """Create a blacklist entry for a token"""
@@ -77,8 +77,8 @@ class TokenBlacklist(BaseModel):
         jti: str,
         token_type: str,
         expires_at: datetime,
-        user_id: uuid.UUID = None,
-        revoked_by: uuid.UUID = None,
+        user_id: UUID = None,
+        revoked_by: UUID = None,
         reason: str = None
     ) -> 'TokenBlacklist':
         """Add a token to the blacklist"""
@@ -111,7 +111,7 @@ class TokenBlacklist(BaseModel):
         result = {}
         for column in self.__table__.columns:
             value = getattr(self, column.name)
-            if isinstance(value, uuid.UUID):
+            if isinstance(value, UUID):
                 result[column.name] = str(value)
             elif hasattr(value, 'isoformat'):
                 result[column.name] = value.isoformat() if value else None

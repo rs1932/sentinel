@@ -81,11 +81,18 @@ sentinel-platform/
 │   ├── database.py      # Database setup
 │   └── main.py          # FastAPI app
 ├── tests/
-│   ├── unit/           # Unit tests
-│   └── integration/    # Integration tests
-├── scripts/            # Utility scripts
-├── alembic/           # Database migrations
-└── docs/              # Documentation
+│   ├── modules/         # Module-specific comprehensive tests
+│   ├── debug/           # Debug and troubleshooting scripts
+│   ├── utils/           # Test utilities and helpers
+│   ├── unit/            # Unit tests
+│   └── integration/     # Integration tests
+├── docs/
+│   ├── project/         # Project management and API documentation
+│   ├── testing/         # Testing methodologies and guides
+│   └── [existing docs]  # Specifications and implementation notes
+├── scripts/             # Database and utility scripts
+├── alembic/            # Database migrations
+└── storage/            # File storage (avatars, uploads)
 ```
 
 ## 🔌 Module Status
@@ -103,7 +110,31 @@ sentinel-platform/
 - [x] Test configuration
 - [x] Cache service (memory/Redis)
 
-### ✅ Module 1: Tenant Management (Complete)
+### ✅ Module 1: Authentication & JWT Token Management (Complete)
+- [x] Database model
+- [x] Pydantic schemas
+- [x] Service layer with business logic
+- [x] RESTful API endpoints
+- [x] Database migrations
+- [x] Unit and integration tests
+- [x] Sample data script
+
+**Features:**
+- JWT token generation and validation
+- Refresh token rotation
+- Token blacklisting for logout
+- Multi-tenant authentication
+- Session management
+- Service account authentication
+
+**API Endpoints:**
+- `POST /api/v1/auth/login` - User login
+- `POST /api/v1/auth/refresh` - Refresh token
+- `POST /api/v1/auth/logout` - User logout
+- `POST /api/v1/auth/service-account/login` - Service account login
+- `GET /api/v1/auth/verify` - Token verification
+
+### ✅ Module 2: Tenant Management (Complete)
 - [x] Database model
 - [x] Pydantic schemas
 - [x] Service layer with business logic
@@ -128,13 +159,65 @@ sentinel-platform/
 - `DELETE /api/v1/tenants/{id}` - Delete tenant
 - `POST /api/v1/tenants/{id}/sub-tenants` - Create sub-tenant
 - `GET /api/v1/tenants/{id}/hierarchy` - Get tenant hierarchy
-- `POST /api/v1/tenants/{id}/activate` - Activate tenant
-- `POST /api/v1/tenants/{id}/deactivate` - Deactivate tenant
+
+### ✅ Module 3: User Management (Complete)
+- [x] Database model
+- [x] Pydantic schemas
+- [x] Service layer with business logic
+- [x] RESTful API endpoints
+- [x] Database migrations
+- [x] Password reset functionality
+- [x] Avatar upload support
+- [x] Comprehensive testing
+
+**Features:**
+- User CRUD operations
+- Profile management with avatars
+- Password reset with email tokens
+- Service account management
+- User activation/deactivation
+- Multi-tenant user isolation
+
+**API Endpoints:**
+- `POST /api/v1/users/` - Create user
+- `GET /api/v1/users/` - List users
+- `GET /api/v1/users/{id}` - Get user details
+- `PATCH /api/v1/users/{id}` - Update user
+- `DELETE /api/v1/users/{id}` - Delete user
+- `POST /api/v1/users/{id}/avatar` - Upload avatar
+- `POST /api/v1/password-reset/request` - Request password reset
+- `POST /api/v1/password-reset/confirm` - Confirm password reset
+
+### ✅ Module 4: Role Management (Complete)
+- [x] Database model with hierarchy support
+- [x] Pydantic schemas
+- [x] Service layer with business logic
+- [x] RESTful API endpoints
+- [x] Database migrations
+- [x] Role hierarchy validation
+- [x] User-role assignments
+- [x] Comprehensive testing (100% success rate)
+
+**Features:**
+- Role CRUD operations
+- Hierarchical role structure
+- Role inheritance
+- User-role assignments
+- Circular dependency prevention
+- Role validation
+- System and custom roles
+
+**API Endpoints:**
+- `POST /api/v1/roles/` - Create role
+- `GET /api/v1/roles/` - List roles
+- `GET /api/v1/roles/{id}` - Get role details
+- `PATCH /api/v1/roles/{id}` - Update role
+- `DELETE /api/v1/roles/{id}` - Delete role
+- `GET /api/v1/roles/{id}/hierarchy` - Get role hierarchy
+- `POST /api/v1/roles/{id}/users` - Assign role to user
+- `POST /api/v1/roles/validate` - Validate role hierarchy
 
 ### 🚧 Upcoming Modules
-- [ ] Module 2: Authentication & Token Management
-- [ ] Module 3: User Management (including Service Accounts)
-- [ ] Module 4: Role Management
 - [ ] Module 5: Group Management
 - [ ] Module 6: Permission Management
 - [ ] Module 7: Resource Management
@@ -148,14 +231,24 @@ sentinel-platform/
 
 ## 🧪 Testing
 
-### Run all tests
+### Comprehensive Module Tests (Recommended)
 ```bash
-pytest
+# Module 4: Complete role management testing (100% success rate)
+python tests/modules/test_role_management_comprehensive.py
+
+# Full system regression testing (modules 1-4)
+python tests/modules/test_regression_complete.py
+
+# Module 3: User management testing
+python tests/modules/test_module3_comprehensive.py
 ```
 
-### Run specific test categories
+### Unit and Integration Tests
 ```bash
-# Unit tests only
+# Run all pytest tests
+pytest
+
+# Unit tests only  
 pytest tests/unit/
 
 # Integration tests only
@@ -165,14 +258,26 @@ pytest tests/integration/
 pytest --cov=src --cov-report=html
 ```
 
-### Test markers
+### Debug and Utilities
 ```bash
-# Run only tenant tests
-pytest -m tenant
+# Debug specific module issues
+python tests/debug/debug_module4.py
 
-# Run only auth tests
-pytest -m auth
+# Create test user for manual testing
+python tests/utils/create_test_user.py
+
+# Test utilities and helpers
+python tests/utils/test_coverage_summary.py
 ```
+
+### Test Organization
+- **`tests/modules/`** - Comprehensive module testing suites
+- **`tests/debug/`** - Debug scripts for troubleshooting
+- **`tests/utils/`** - Test utilities and helper scripts
+- **`tests/unit/`** - Unit tests with pytest
+- **`tests/integration/`** - API integration tests
+
+See `tests/README.md` and `docs/testing/TEST_METHODOLOGY.md` for detailed testing documentation.
 
 ## 🔧 Development
 

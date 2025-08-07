@@ -177,3 +177,44 @@ class AuthConfig(BaseModel):
     require_email_verification: bool = Field(default=True, description="Require email verification for new accounts")
     enable_mfa: bool = Field(default=False, description="Enable multi-factor authentication")
     rate_limit_requests_per_minute: int = Field(default=60, description="Rate limit for auth endpoints")
+
+
+# Password Reset Schemas
+class PasswordResetRequest(BaseModel):
+    """Request schema for password reset"""
+    email: EmailStr = Field(..., description="User email address")
+    tenant_code: str = Field(..., min_length=1, max_length=50, description="Tenant code")
+    
+    @validator("tenant_code")
+    def validate_tenant_code(cls, v):
+        if not re.match(r"^[A-Z0-9][A-Z0-9-]*$", v.upper()):
+            raise ValueError("Tenant code must contain only letters, numbers, and hyphens")
+        return v.upper()
+
+
+class PasswordResetValidation(BaseModel):
+    """Response schema for token validation"""
+    valid: bool = Field(..., description="Whether the token is valid")
+    user_email: str = Field(..., description="Email of user (masked)")
+    expires_at: str = Field(..., description="Token expiration time")
+
+
+class PasswordResetConfirm(BaseModel):
+    """Request schema for confirming password reset"""
+    token: str = Field(..., min_length=1, description="Reset token from email")
+    new_password: str = Field(..., min_length=8, max_length=255, description="New password")
+    confirm_password: str = Field(..., min_length=8, max_length=255, description="Password confirmation")
+    
+    @validator("confirm_password")
+    def passwords_match(cls, v, values):
+        if "new_password" in values and v != values["new_password"]:
+            raise ValueError("Passwords do not match")
+        return v
+
+
+class PasswordResetResponse(BaseModel):
+    """Response schema for password reset operations"""
+    success: bool = Field(..., description="Whether the operation was successful")
+    message: str = Field(..., description="Result message")
+    debug_token: Optional[str] = Field(None, description="Debug only - reset token")
+    debug_url: Optional[str] = Field(None, description="Debug only - reset URL")

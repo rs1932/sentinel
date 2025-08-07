@@ -12,6 +12,12 @@ from src.config import settings
 from src.database import Base
 
 from src.models.base import BaseModel
+# Import all models so Alembic can detect them
+from src.models.tenant import Tenant
+from src.models.user import User
+from src.models.refresh_token import RefreshToken
+from src.models.token_blacklist import TokenBlacklist
+from src.models.password_reset_token import PasswordResetToken
 
 config = context.config
 

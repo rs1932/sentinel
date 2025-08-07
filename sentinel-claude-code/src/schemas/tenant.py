@@ -3,10 +3,20 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 from uuid import UUID
 import re
+from enum import Enum
 
-from src.models.tenant import TenantType, IsolationMode
+# Define enums locally to avoid circular imports
+class TenantType(str, Enum):
+    ROOT = "root"
+    SUB_TENANT = "sub_tenant"
+
+class IsolationMode(str, Enum):
+    SHARED = "shared"
+    DEDICATED = "dedicated"
 
 class TenantBase(BaseModel):
+    class Config:
+        use_enum_values = True
     name: str = Field(..., min_length=1, max_length=255, description="Tenant name")
     code: str = Field(..., min_length=1, max_length=50, description="Unique tenant code")
     type: TenantType = Field(default=TenantType.ROOT, description="Tenant type")
@@ -101,7 +111,7 @@ class TenantResponse(BaseModel):
     class Config:
         from_attributes = True
         use_enum_values = True
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 class TenantDetailResponse(TenantResponse):
     sub_tenants_count: int = 0

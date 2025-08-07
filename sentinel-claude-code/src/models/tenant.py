@@ -7,10 +7,16 @@ from src.models.base import BaseModel
 from src.utils.types import UUID, ARRAY
 
 class TenantType(str, enum.Enum):
+    root = "root"
+    sub_tenant = "sub_tenant"
+    # Add uppercase aliases for backward compatibility
     ROOT = "root"
     SUB_TENANT = "sub_tenant"
 
 class IsolationMode(str, enum.Enum):
+    shared = "shared"
+    dedicated = "dedicated"
+    # Add uppercase aliases for backward compatibility
     SHARED = "shared"
     DEDICATED = "dedicated"
 
@@ -20,9 +26,9 @@ class Tenant(BaseModel):
     
     name = Column(String(255), nullable=False)
     code = Column(String(50), unique=True, nullable=False)
-    type = Column(String(50), nullable=False, default='root')
+    type = Column(Enum(TenantType, name='tenant_type', schema='sentinel'), nullable=False, default=TenantType.ROOT)
     parent_tenant_id = Column(UUID(as_uuid=True), ForeignKey("sentinel.tenants.id", ondelete="CASCADE"), nullable=True)
-    isolation_mode = Column(String(50), nullable=False, default='shared')
+    isolation_mode = Column(Enum(IsolationMode, name='isolation_mode', schema='sentinel'), nullable=False, default=IsolationMode.SHARED)
     settings = Column(JSON, default=dict)
     features = Column(ARRAY(Text), default=list)
     tenant_metadata = Column("tenant_metadata", JSON, default=dict)
@@ -30,20 +36,21 @@ class Tenant(BaseModel):
     
     parent = relationship("Tenant", remote_side="Tenant.id", backref="sub_tenants")
     users = relationship("User", back_populates="tenant")
+    roles = relationship("Role", back_populates="tenant")
     
     def __init__(self, **kwargs):
         # Handle API compatibility: map 'metadata' to 'tenant_metadata'
         if "metadata" in kwargs:
             kwargs["tenant_metadata"] = kwargs.pop("metadata")
 
-        # Handle enum to string conversion for API compatibility
-        if "type" in kwargs and hasattr(kwargs["type"], 'value'):
-            kwargs["type"] = kwargs["type"].value
-        if "isolation_mode" in kwargs and hasattr(kwargs["isolation_mode"], 'value'):
-            kwargs["isolation_mode"] = kwargs["isolation_mode"].value
+        # Convert string values to enum instances if needed
+        if "type" in kwargs and isinstance(kwargs["type"], str):
+            kwargs["type"] = TenantType(kwargs["type"])
+        if "isolation_mode" in kwargs and isinstance(kwargs["isolation_mode"], str):
+            kwargs["isolation_mode"] = IsolationMode(kwargs["isolation_mode"])
 
         if "id" not in kwargs and kwargs.get("code") == "PLATFORM":
-            kwargs["id"] = uuid.UUID("00000000-0000-0000-0000-000000000000")
+            kwargs["id"] = UUID("00000000-0000-0000-0000-000000000000")
         super().__init__(**kwargs)
     
     def to_dict(self):
@@ -63,7 +70,7 @@ class Tenant(BaseModel):
             current = current.parent
         return list(reversed(hierarchy))
     
-    def is_sub_tenant_of(self, tenant_id: uuid.UUID) -> bool:
+    def is_sub_tenant_of(self, tenant_id: UUID) -> bool:
         current = self
         while current.parent:
             if current.parent_tenant_id == tenant_id:

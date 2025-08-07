@@ -31,7 +31,7 @@ class UUID(TypeDecorator):
             return value
         else:
             # For SQLite, convert UUID to string
-            if isinstance(value, uuid.UUID):
+            if isinstance(value, UUID):
                 return str(value)
             return value
 
@@ -43,7 +43,7 @@ class UUID(TypeDecorator):
         else:
             # For SQLite, convert string back to UUID
             if isinstance(value, str):
-                return uuid.UUID(value)
+                return UUID(value)
             return value
 
 

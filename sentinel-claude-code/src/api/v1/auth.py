@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List
 from uuid import UUID
 
-from src.core.database import get_db_session
+from src.database import get_db
 from src.services.authentication import AuthenticationService
 from src.services.token import TokenService
 from src.schemas.auth import (
@@ -49,7 +49,7 @@ def get_device_info(request: Request) -> DeviceInfo:
 async def login(
     login_request: LoginRequest,
     request: Request,
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Authenticate user with email/password and return JWT tokens
@@ -89,7 +89,7 @@ async def login(
              })
 async def service_account_token(
     token_request: ServiceAccountTokenRequest,
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Authenticate service account and return JWT access token
@@ -120,7 +120,7 @@ async def service_account_token(
 async def refresh_token(
     refresh_request: RefreshTokenRequest,
     request: Request,
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Refresh access token using refresh token
@@ -150,7 +150,7 @@ async def refresh_token(
              })
 async def revoke_token(
     revoke_request: RevokeTokenRequest,
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Revoke an access or refresh token
@@ -182,7 +182,7 @@ async def revoke_token(
 async def logout(
     logout_request: LogoutRequest,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Logout user and revoke tokens
@@ -216,7 +216,7 @@ async def logout(
             })
 async def validate_token(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Validate access token and return token information
@@ -231,7 +231,7 @@ async def validate_token(
         )
     
     auth_service = AuthenticationService(db)
-    validation_response = await auth_service.validate_token(credentials.credentials)
+    validation_response = auth_service.validate_token(credentials.credentials)
     
     if not validation_response.valid:
         raise HTTPException(
@@ -249,7 +249,7 @@ async def validate_token(
             response_model=List[RefreshTokenInfo])
 async def get_my_tokens(
     current_user = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Get user's active refresh tokens (sessions)
@@ -265,7 +265,7 @@ async def get_my_tokens(
 async def revoke_my_token(
     token_id: UUID,
     current_user = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Revoke a specific refresh token (logout from device)
@@ -291,7 +291,7 @@ async def revoke_my_token(
 async def revoke_all_my_tokens(
     keep_current: bool = True,
     current_user = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Revoke all user's refresh tokens (logout from all devices)
@@ -332,7 +332,7 @@ async def get_password_requirements():
 async def log_security_event(
     event: SecurityEventRequest,
     current_user = Depends(get_current_user_optional),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Log security event for monitoring and alerting
@@ -368,7 +368,7 @@ async def introspect_token(
     token: str,
     token_type_hint: Optional[str] = None,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Token introspection endpoint (RFC 7662)
@@ -383,7 +383,7 @@ async def introspect_token(
     
     # Validate client credentials (service account)
     auth_service = AuthenticationService(db)
-    validation = await auth_service.validate_token(credentials.credentials)
+    validation = auth_service.validate_token(credentials.credentials)
     
     if not validation.valid or not validation.is_service_account:
         raise HTTPException(

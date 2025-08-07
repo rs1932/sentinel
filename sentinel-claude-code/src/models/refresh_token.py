@@ -54,7 +54,7 @@ class RefreshToken(Base):
     @classmethod
     def create_for_user(
         cls, 
-        user_id: uuid.UUID, 
+        user_id: UUID, 
         token: str, 
         device_info: dict = None,
         expires_in_days: int = 30
@@ -93,7 +93,7 @@ class RefreshToken(Base):
         result = {}
         for column in self.__table__.columns:
             value = getattr(self, column.name)
-            if isinstance(value, uuid.UUID):
+            if isinstance(value, UUID):
                 result[column.name] = str(value)
             elif hasattr(value, 'isoformat'):
                 result[column.name] = value.isoformat() if value else None

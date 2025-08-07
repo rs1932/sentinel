@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, Query, status
 from typing import List, Optional
 from uuid import UUID
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
 from src.services.tenant_service import TenantService
+from src.core.security_utils import get_current_user, require_scopes, CurrentUser
 from src.schemas.tenant import (
     TenantCreate, TenantUpdate, TenantQuery,
     TenantResponse, TenantDetailResponse, TenantListResponse,
@@ -19,7 +20,8 @@ router = APIRouter(prefix="/tenants", tags=["Tenants"])
 @router.post("/", response_model=TenantResponse, status_code=status.HTTP_201_CREATED)
 async def create_tenant(
     tenant_data: TenantCreate,
-    db: Session = Depends(get_db)
+    current_user: CurrentUser = Depends(require_scopes("tenant:admin")),
+    db: AsyncSession = Depends(get_db)
 ):
     service = TenantService(db)
     try:
@@ -37,7 +39,8 @@ async def list_tenants(
     is_active: Optional[bool] = Query(None, description="Filter by active status"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of items to return"),
     offset: int = Query(0, ge=0, description="Number of items to skip"),
-    db: Session = Depends(get_db)
+    current_user: CurrentUser = Depends(require_scopes("tenant:read")),
+    db: AsyncSession = Depends(get_db)
 ):
     service = TenantService(db)
     query = TenantQuery(
@@ -54,7 +57,8 @@ async def list_tenants(
 @router.get("/{tenant_id}", response_model=TenantDetailResponse)
 async def get_tenant(
     tenant_id: UUID,
-    db: Session = Depends(get_db)
+    current_user: CurrentUser = Depends(require_scopes("tenant:read")),
+    db: AsyncSession = Depends(get_db)
 ):
     service = TenantService(db)
     try:
@@ -65,7 +69,8 @@ async def get_tenant(
 @router.get("/code/{tenant_code}", response_model=TenantResponse)
 async def get_tenant_by_code(
     tenant_code: str,
-    db: Session = Depends(get_db)
+    current_user: CurrentUser = Depends(require_scopes("tenant:read")),
+    db: AsyncSession = Depends(get_db)
 ):
     service = TenantService(db)
     try:
@@ -78,7 +83,8 @@ async def get_tenant_by_code(
 async def update_tenant(
     tenant_id: UUID,
     update_data: TenantUpdate,
-    db: Session = Depends(get_db)
+    current_user: CurrentUser = Depends(require_scopes("tenant:write")),
+    db: AsyncSession = Depends(get_db)
 ):
     service = TenantService(db)
     try:
@@ -90,7 +96,8 @@ async def update_tenant(
 @router.delete("/{tenant_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_tenant(
     tenant_id: UUID,
-    db: Session = Depends(get_db)
+    current_user: CurrentUser = Depends(require_scopes("tenant:admin")),
+    db: AsyncSession = Depends(get_db)
 ):
     service = TenantService(db)
     try:
@@ -103,7 +110,8 @@ async def delete_tenant(
 async def create_sub_tenant(
     parent_tenant_id: UUID,
     sub_tenant_data: SubTenantCreate,
-    db: Session = Depends(get_db)
+    current_user: CurrentUser = Depends(require_scopes("tenant:admin")),
+    db: AsyncSession = Depends(get_db)
 ):
     service = TenantService(db)
     try:
@@ -115,7 +123,8 @@ async def create_sub_tenant(
 @router.get("/{tenant_id}/hierarchy", response_model=List[TenantResponse])
 async def get_tenant_hierarchy(
     tenant_id: UUID,
-    db: Session = Depends(get_db)
+    current_user: CurrentUser = Depends(require_scopes("tenant:read")),
+    db: AsyncSession = Depends(get_db)
 ):
     service = TenantService(db)
     try:
@@ -127,7 +136,8 @@ async def get_tenant_hierarchy(
 @router.post("/{tenant_id}/activate", response_model=TenantResponse)
 async def activate_tenant(
     tenant_id: UUID,
-    db: Session = Depends(get_db)
+    current_user: CurrentUser = Depends(require_scopes("tenant:admin")),
+    db: AsyncSession = Depends(get_db)
 ):
     service = TenantService(db)
     try:
@@ -139,7 +149,8 @@ async def activate_tenant(
 @router.post("/{tenant_id}/deactivate", response_model=TenantResponse)
 async def deactivate_tenant(
     tenant_id: UUID,
-    db: Session = Depends(get_db)
+    current_user: CurrentUser = Depends(require_scopes("tenant:admin")),
+    db: AsyncSession = Depends(get_db)
 ):
     service = TenantService(db)
     try:

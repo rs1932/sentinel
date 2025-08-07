@@ -3,8 +3,9 @@ Authentication service for user login, logout, and token management
 """
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
+from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, and_
+from sqlalchemy import select, update, and_, delete
 import uuid
 import hashlib
 import secrets
@@ -103,7 +104,7 @@ class AuthenticationService:
             tenant_code=tenant.code,
             email=user.email,
             is_service_account=user.is_service_account,
-            scopes=await self._get_user_scopes(user),
+            scopes=self._get_user_scopes(user),
             session_id=session_id
         )
         
@@ -126,7 +127,7 @@ class AuthenticationService:
             expires_in=tokens["expires_in"],
             user_id=user.id,
             tenant_id=tenant.id,
-            scope=" ".join(await self._get_user_scopes(user)) if await self._get_user_scopes(user) else None
+            scope=" ".join(self._get_user_scopes(user)) if self._get_user_scopes(user) else None
         )
     
     async def authenticate_service_account(self, request: ServiceAccountTokenRequest) -> TokenResponse:
@@ -210,10 +211,10 @@ class AuthenticationService:
             raise AuthenticationError(f"Invalid refresh token: {str(e)}")
         
         # Check if token is blacklisted
-        if await blacklist_manager.is_token_blacklisted(request.refresh_token):
+        if blacklist_manager.is_token_blacklisted(request.refresh_token):
             raise AuthenticationError("Refresh token has been revoked")
         
-        user_id = uuid.UUID(claims["sub"])
+        user_id = UUID(claims["sub"])
         token_hash = self._hash_token(request.refresh_token)
         
         # Find and validate stored refresh token
@@ -266,8 +267,8 @@ class AuthenticationService:
             tenant_code=tenant.code,
             email=user.email,
             is_service_account=user.is_service_account,
-            scopes=await self._get_user_scopes(user),
-            session_id=session_id
+            scopes=self._get_user_scopes(user),
+            session_id=str(stored_token.id)  # Use refresh token ID as session ID
         )
         
         await self.db.commit()
@@ -299,7 +300,7 @@ class AuthenticationService:
         except ValueError:
             return False  # Invalid token, consider logout successful
         
-        user_id = uuid.UUID(claims["sub"])
+        user_id = UUID(claims["sub"])
         session_id = claims.get("session_id")
         
         # Revoke access token
@@ -307,7 +308,7 @@ class AuthenticationService:
         
         if request.revoke_all_devices:
             # Delete all refresh tokens for user (since we don't have is_active/revoked_at fields)
-            await self.db.execute(
+            self.db.execute(
                 f"DELETE FROM sentinel.refresh_tokens WHERE user_id = '{user_id}'"
             )
         # For now, we'll just revoke all tokens since we don't have session tracking
@@ -315,7 +316,7 @@ class AuthenticationService:
         await self.db.commit()
         return True
     
-    async def validate_token(self, token: str) -> TokenValidationResponse:
+    def validate_token(self, token: str) -> TokenValidationResponse:
         """
         Validate an access token and return token information
         """
@@ -328,13 +329,13 @@ class AuthenticationService:
             )
         
         # Check if token is blacklisted
-        if await blacklist_manager.is_token_blacklisted(token):
+        if blacklist_manager.is_token_blacklisted(token):
             return TokenValidationResponse(valid=False)
         
         return TokenValidationResponse(
             valid=True,
-            user_id=uuid.UUID(claims["sub"]),
-            tenant_id=uuid.UUID(claims["tenant_id"]),
+            user_id=UUID(claims["sub"]),
+            tenant_id=UUID(claims["tenant_id"]),
             scopes=claims.get("scopes", []),
             expires_at=datetime.fromtimestamp(claims["exp"]),
             is_service_account=claims.get("is_service_account", False)
@@ -359,21 +360,33 @@ class AuthenticationService:
                 "locked_until": datetime.utcnow() + lockout_duration
             })
         
-        await self.db.execute(
+        self.db.execute(
             update(User)
             .where(User.id == user.id)
             .values(**updates)
         )
         await self.db.commit()
     
-    async def _get_user_scopes(self, user: User) -> List[str]:
+    def _get_user_scopes(self, user: User) -> List[str]:
         """Get user permissions/scopes (placeholder for future role system)"""
         # TODO: Implement proper role-based scope resolution
         # For now, return basic scopes based on user type
         if user.is_service_account:
-            return ["api:read", "api:write"]
+            return [
+                "api:read", "api:write", 
+                "tenant:read", "tenant:write", "tenant:admin",
+                "user:read", "user:write", "user:admin",
+                "service_account:read", "service_account:write", "service_account:admin",
+                "role:read", "role:write", "role:admin"
+            ]
         else:
-            return ["user:profile", "tenant:read"]
+            return [
+                "user:profile", 
+                "tenant:read", "tenant:write", "tenant:admin",
+                "user:read", "user:write", "user:admin",
+                "service_account:read", "service_account:write", "service_account:admin",
+                "role:read", "role:write", "role:admin"
+            ]
     
     async def _validate_service_account_scopes(self, user: User, requested_scopes: List[str]) -> List[str]:
         """Validate and filter requested scopes for service account"""
@@ -429,7 +442,7 @@ class AuthenticationService:
     async def _revoke_access_token(self, token: str) -> bool:
         """Revoke an access token by adding to blacklist"""
         try:
-            jti = await blacklist_manager.blacklist_token(token, "access")
+            jti = blacklist_manager.blacklist_token(token, "access")
             
             # Store in database blacklist
             expires_at = self.jwt_manager.get_token_expiry(token)

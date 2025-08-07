@@ -1,9 +1,9 @@
-from sqlalchemy import create_engine, MetaData, event, text
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy import MetaData, event, text
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import NullPool, QueuePool
-from contextlib import contextmanager
-from typing import Generator
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 import logging
 
 from src.config import settings
@@ -12,36 +12,42 @@ logger = logging.getLogger(__name__)
 
 metadata = MetaData(schema=settings.DATABASE_SCHEMA)
 
-# Create engine with different configurations for debug vs production
+# Convert PostgreSQL URL to async format
+database_url = settings.DATABASE_URL
+if database_url.startswith("postgresql://"):
+    database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+# Create async engine with different configurations for debug vs production
 if settings.DEBUG:
-    engine = create_engine(
-        settings.DATABASE_URL,
+    engine = create_async_engine(
+        database_url,
         poolclass=NullPool,
         echo=settings.DEBUG,
         connect_args={
-            "options": f"-csearch_path={settings.DATABASE_SCHEMA},public"
+            "server_settings": {
+                "search_path": f"{settings.DATABASE_SCHEMA},public"
+            }
         }
     )
 else:
-    engine = create_engine(
-        settings.DATABASE_URL,
+    engine = create_async_engine(
+        database_url,
         poolclass=QueuePool,
         pool_size=settings.DATABASE_POOL_SIZE,
         max_overflow=settings.DATABASE_MAX_OVERFLOW,
         echo=settings.DEBUG,
         pool_pre_ping=True,
         connect_args={
-            "options": f"-csearch_path={settings.DATABASE_SCHEMA},public"
+            "server_settings": {
+                "search_path": f"{settings.DATABASE_SCHEMA},public"
+            }
         }
     )
 
-@event.listens_for(engine, "connect")
-def set_schema_on_connect(dbapi_conn, connection_record):
-    with dbapi_conn.cursor() as cursor:
-        cursor.execute(f"SET search_path TO {settings.DATABASE_SCHEMA}, public")
-
-SessionLocal = sessionmaker(
+# Create async session factory
+AsyncSessionLocal = async_sessionmaker(
     bind=engine,
+    class_=AsyncSession,
     autocommit=False,
     autoflush=False,
     expire_on_commit=False
@@ -49,38 +55,39 @@ SessionLocal = sessionmaker(
 
 Base = declarative_base(metadata=metadata)
 
-def get_db() -> Generator[Session, None, None]:
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
 
-@contextmanager
-def get_db_context():
-    db = SessionLocal()
-    try:
-        yield db
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise
-    finally:
-        db.close()
+@asynccontextmanager
+async def get_db_context():
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
 
-def init_db():
-    with engine.begin() as conn:
-        conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {settings.DATABASE_SCHEMA}"))
-        conn.commit()
+async def init_db():
+    async with engine.begin() as conn:
+        await conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {settings.DATABASE_SCHEMA}"))
+        await conn.commit()
     
-    Base.metadata.create_all(bind=engine)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     logger.info(f"Database initialized with schema: {settings.DATABASE_SCHEMA}")
 
-def check_database_connection():
+async def check_database_connection():
     try:
-        with engine.connect() as conn:
-            result = conn.execute(text("SELECT 1"))
-            result.fetchone()
+        async with engine.connect() as conn:
+            result = await conn.execute(text("SELECT 1"))
+            await result.fetchone()
         logger.info("Database connection successful")
         return True
     except Exception as e:
