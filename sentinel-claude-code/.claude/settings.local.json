@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(find:*)",
+      "Bash(python3.10:*)",
+      "Bash(touch:*)",
+      "Bash(grep:*)",
+      "Bash(source:*)",
+      "Bash(python test:*)",
+      "Bash(curl:*)",
+      "Bash(pkill:*)",
+      "Bash(pip install:*)",
+      "Bash(chmod:*)",
+      "Bash(pytest:*)",
+      "Bash(allure serve:*)"
+    ],
+    "deny": []
+  }
+}
