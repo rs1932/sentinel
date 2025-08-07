@@ -308,7 +308,7 @@ class AuthenticationService:
         
         if request.revoke_all_devices:
             # Delete all refresh tokens for user (since we don't have is_active/revoked_at fields)
-            self.db.execute(
+            await self.db.execute(
                 f"DELETE FROM sentinel.refresh_tokens WHERE user_id = '{user_id}'"
             )
         # For now, we'll just revoke all tokens since we don't have session tracking
@@ -360,7 +360,7 @@ class AuthenticationService:
                 "locked_until": datetime.utcnow() + lockout_duration
             })
         
-        self.db.execute(
+        await self.db.execute(
             update(User)
             .where(User.id == user.id)
             .values(**updates)

@@ -76,7 +76,7 @@ app.include_router(api_router)
 async def startup_event():
     logger.info("Starting Sentinel Access Platform", version=settings.VERSION)
     
-    if not check_database_connection():
+    if not await check_database_connection():
         logger.error("Failed to connect to database")
         raise Exception("Database connection failed")
     

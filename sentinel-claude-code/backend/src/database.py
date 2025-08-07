@@ -87,7 +87,7 @@ async def check_database_connection():
     try:
         async with engine.connect() as conn:
             result = await conn.execute(text("SELECT 1"))
-            await result.fetchone()
+            result.fetchone()
         logger.info("Database connection successful")
         return True
     except Exception as e:

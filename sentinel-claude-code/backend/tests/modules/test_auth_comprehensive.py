@@ -17,7 +17,7 @@ class AuthenticationTester:
         self.auth_url = f"{self.base_url}/auth"
         self.test_credentials = {
             "email": "test@example.com",
-            "password": "NewSecurePassword4$7!",
+            "password": "password123",
             "tenant_code": "TEST"
         }
         self.access_token = None
