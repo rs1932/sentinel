@@ -15,7 +15,14 @@ class BaseModel(Base):
     def to_dict(self):
         result = {}
         for column in self.__table__.columns:
-            value = getattr(self, column.name)
+            # Get the value using the column name, but handle AttributeError gracefully
+            try:
+                value = getattr(self, column.name)
+            except AttributeError:
+                # Column name might be aliased, skip for now
+                # Subclasses can override to handle specific cases
+                continue
+
             if isinstance(value, uuid.UUID):
                 result[column.name] = str(value)
             elif hasattr(value, 'isoformat'):

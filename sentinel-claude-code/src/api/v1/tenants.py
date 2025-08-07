@@ -24,7 +24,7 @@ async def create_tenant(
     service = TenantService(db)
     try:
         tenant = await service.create_tenant(tenant_data)
-        return TenantResponse.from_orm(tenant)
+        return TenantResponse(**tenant.to_dict())
     except Exception as e:
         raise BadRequestError(str(e))
 
@@ -70,7 +70,7 @@ async def get_tenant_by_code(
     service = TenantService(db)
     try:
         tenant = await service.get_tenant_by_code(tenant_code)
-        return TenantResponse.from_orm(tenant)
+        return TenantResponse(**tenant.to_dict())
     except Exception as e:
         raise NotFoundHTTPError(str(e))
 
@@ -83,7 +83,7 @@ async def update_tenant(
     service = TenantService(db)
     try:
         tenant = await service.update_tenant(tenant_id, update_data)
-        return TenantResponse.from_orm(tenant)
+        return TenantResponse(**tenant.to_dict())
     except Exception as e:
         raise BadRequestError(str(e))
 
@@ -108,7 +108,7 @@ async def create_sub_tenant(
     service = TenantService(db)
     try:
         tenant = await service.create_sub_tenant(parent_tenant_id, sub_tenant_data)
-        return TenantResponse.from_orm(tenant)
+        return TenantResponse(**tenant.to_dict())
     except Exception as e:
         raise BadRequestError(str(e))
 
@@ -120,7 +120,7 @@ async def get_tenant_hierarchy(
     service = TenantService(db)
     try:
         hierarchy = await service.get_tenant_hierarchy(tenant_id)
-        return [TenantResponse.from_orm(t) for t in hierarchy]
+        return [TenantResponse(**t.to_dict()) for t in hierarchy]
     except Exception as e:
         raise NotFoundHTTPError(str(e))
 
@@ -132,7 +132,7 @@ async def activate_tenant(
     service = TenantService(db)
     try:
         tenant = await service.activate_tenant(tenant_id)
-        return TenantResponse.from_orm(tenant)
+        return TenantResponse(**tenant.to_dict())
     except Exception as e:
         raise BadRequestError(str(e))
 
@@ -144,6 +144,6 @@ async def deactivate_tenant(
     service = TenantService(db)
     try:
         tenant = await service.deactivate_tenant(tenant_id)
-        return TenantResponse.from_orm(tenant)
+        return TenantResponse(**tenant.to_dict())
     except Exception as e:
         raise BadRequestError(str(e))

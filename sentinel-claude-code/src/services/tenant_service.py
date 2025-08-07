@@ -102,7 +102,7 @@ class TenantService:
         tenants = q.offset(query.offset).limit(query.limit).all()
         
         return TenantListResponse(
-            items=[TenantResponse.from_orm(t) for t in tenants],
+            items=[TenantResponse(**t.to_dict()) for t in tenants],
             total=total,
             limit=query.limit,
             offset=query.offset
@@ -215,10 +215,10 @@ class TenantService:
         
         hierarchy = tenant.get_hierarchy()
         
-        response = TenantDetailResponse.from_orm(tenant)
+        response = TenantDetailResponse(**tenant.to_dict())
         response.sub_tenants_count = sub_tenants_count or 0
         response.users_count = users_count
-        response.hierarchy = [TenantResponse.from_orm(t) for t in hierarchy]
+        response.hierarchy = [TenantResponse(**t.to_dict()) for t in hierarchy]
         
         return response
     

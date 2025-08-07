@@ -25,7 +25,7 @@ class Tenant(BaseModel):
     isolation_mode = Column(String(50), nullable=False, default='shared')
     settings = Column(JSON, default=dict)
     features = Column(ARRAY(Text), default=list)
-    tenant_metadata = Column("metadata", JSON, default=dict)
+    tenant_metadata = Column("tenant_metadata", JSON, default=dict)
     is_active = Column(Boolean, default=True)
     
     parent = relationship("Tenant", remote_side="Tenant.id", backref="sub_tenants")
@@ -48,11 +48,8 @@ class Tenant(BaseModel):
     
     def to_dict(self):
         result = super().to_dict()
-        # type and isolation_mode are now stored as strings directly
-        # result["type"] = self.type.value if self.type else None
-        # result["isolation_mode"] = self.isolation_mode.value if self.isolation_mode else None
 
-        # Handle API compatibility: map 'tenant_metadata' to 'metadata'
+        # Handle API compatibility: map 'tenant_metadata' to 'metadata' for API responses
         if "tenant_metadata" in result:
             result["metadata"] = result.pop("tenant_metadata")
 

@@ -93,7 +93,7 @@ class TenantResponse(BaseModel):
     isolation_mode: IsolationMode
     settings: Dict[str, Any]
     features: List[str]
-    metadata: Dict[str, Any] = Field(alias="tenant_metadata")
+    metadata: Dict[str, Any]
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -101,6 +101,7 @@ class TenantResponse(BaseModel):
     class Config:
         from_attributes = True
         use_enum_values = True
+        allow_population_by_field_name = True
 
 class TenantDetailResponse(TenantResponse):
     sub_tenants_count: int = 0
