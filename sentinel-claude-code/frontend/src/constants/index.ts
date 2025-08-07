@@ -38,7 +38,7 @@ export const ROUTES = {
   HOME: '/',
   LOGIN: '/auth/login',
   DASHBOARD: '/dashboard',
-  PROFILE: '/profile',
+  PROFILE: '/profile', 
   USERS: '/users',
   TENANTS: '/tenants',
   ROLES: '/roles',

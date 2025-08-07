@@ -2,6 +2,7 @@
 export interface User {
   id: string;
   email: string;
+  username?: string;
   first_name: string;
   last_name: string;
   tenant_id: string;
@@ -30,13 +31,23 @@ export interface Role {
 export interface Tenant {
   id: string;
   name: string;
-  display_name: string;
+  display_name?: string;
+  code: string;
   type: 'root' | 'sub_tenant';
   parent_tenant_id?: string;
   isolation_mode: 'shared' | 'dedicated';
-  features: string[];
   settings: Record<string, any>;
+  features: string[];
+  metadata: Record<string, any>;
   is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TenantDetail extends Tenant {
+  sub_tenants_count: number;
+  users_count: number;
+  hierarchy: Tenant[];
 }
 
 export interface AuthTokens {
@@ -71,3 +82,6 @@ export interface DashboardStats {
   active_tenants: number;
   total_roles: number;
 }
+
+// Re-export tenant types
+export * from './tenant';

@@ -371,6 +371,11 @@ class AuthenticationService:
         """Get user permissions/scopes (placeholder for future role system)"""
         # TODO: Implement proper role-based scope resolution
         # For now, return basic scopes based on user type
+        
+        # Check if user is super admin (on PLATFORM tenant)
+        platform_tenant_id = "00000000-0000-0000-0000-000000000000"
+        is_super_admin = str(user.tenant_id) == platform_tenant_id
+        
         if user.is_service_account:
             return [
                 "api:read", "api:write", 
@@ -379,7 +384,20 @@ class AuthenticationService:
                 "service_account:read", "service_account:write", "service_account:admin",
                 "role:read", "role:write", "role:admin"
             ]
+        elif is_super_admin:
+            # Super admin gets global scopes across all tenants
+            return [
+                "user:profile",
+                "platform:admin",  # Global platform administration
+                "tenant:read", "tenant:write", "tenant:admin", "tenant:global",
+                "user:read", "user:write", "user:admin", "user:global",
+                "service_account:read", "service_account:write", "service_account:admin", "service_account:global",
+                "role:read", "role:write", "role:admin", "role:global",
+                "system:admin",  # System-level administration
+                "audit:read", "audit:write"  # Audit log access
+            ]
         else:
+            # Regular tenant users
             return [
                 "user:profile", 
                 "tenant:read", "tenant:write", "tenant:admin",

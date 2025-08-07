@@ -51,7 +51,7 @@ export function DashboardOverview() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">
-              {getWelcomeMessage()}, {user?.first_name}!
+              {getWelcomeMessage()}, {user?.first_name || user?.username || 'User'}!
             </h1>
             <p className="text-blue-100 mt-1">
               Welcome back to your {getRoleDisplayName(userRole || 'user')} dashboard

@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth';
+import { apiClient } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,65 +18,71 @@ import {
 } from '@/components/ui/table';
 import { Search, Plus, MoreHorizontal, Shield, Users } from 'lucide-react';
 
-// Mock data for demonstration
-const mockRoles = [
-  {
-    id: '1',
-    name: 'super_admin',
-    display_name: 'Super Administrator',
-    description: 'Full system access with all permissions',
-    type: 'system' as const,
-    priority: 100,
-    is_assignable: true,
-    user_count: 2,
-    tenant_id: 'system',
-  },
-  {
-    id: '2',
-    name: 'tenant_admin',
-    display_name: 'Tenant Administrator',
-    description: 'Manage users and settings within the organization',
-    type: 'system' as const,
-    priority: 90,
-    is_assignable: true,
-    user_count: 5,
-    tenant_id: 'system',
-  },
-  {
-    id: '3',
-    name: 'user',
-    display_name: 'Standard User',
-    description: 'Basic access to application features',
-    type: 'system' as const,
-    priority: 10,
-    is_assignable: true,
-    user_count: 28,
-    tenant_id: 'system',
-  },
-  {
-    id: '4',
-    name: 'hr_manager',
-    display_name: 'HR Manager',
-    description: 'Manage employee data and HR processes',
-    type: 'custom' as const,
-    priority: 50,
-    is_assignable: true,
-    user_count: 3,
-    tenant_id: '1',
-  },
-];
-
 export function RolesManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const { userRole } = useAuthStore();
 
   const canManageRoles = userRole === 'super_admin' || userRole === 'tenant_admin';
 
-  const filteredRoles = mockRoles.filter(role =>
-    `${role.display_name} ${role.description} ${role.name}`
+  // Fetch roles from API
+  const {
+    data: rolesResponse,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['roles'],
+    queryFn: () => apiClient.roles.list(),
+    retry: 1,
+  });
+
+  const roles = rolesResponse?.items || rolesResponse || [];
+
+  const filteredRoles = roles.filter((role: any) =>
+    `${role.display_name || role.name} ${role.description} ${role.name}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Role Management</h1>
+            <p className="text-gray-600">Loading roles...</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Role Management</h1>
+            <p className="text-gray-600">Unable to load roles</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-12">
+              <p className="text-red-600">Failed to load roles. The roles API may not be fully implemented yet.</p>
+              <p className="text-gray-500 mt-2">Error: {error?.message || 'Unknown error'}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const getRoleTypeColor = (type: string) => {
     switch (type) {
@@ -226,7 +234,7 @@ export function RolesManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockRoles.filter(r => r.type === 'system').length}
+              {roles.filter((r: any) => r.type === 'system').length}
             </div>
             <p className="text-xs text-gray-500">Built-in roles</p>
           </CardContent>
@@ -240,7 +248,7 @@ export function RolesManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockRoles.filter(r => r.type === 'custom').length}
+              {roles.filter((r: any) => r.type === 'custom').length}
             </div>
             <p className="text-xs text-gray-500">Organization-specific</p>
           </CardContent>
@@ -249,14 +257,14 @@ export function RolesManagement() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-gray-600">
-              Total Assignments
+              Total Roles
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockRoles.reduce((sum, role) => sum + role.user_count, 0)}
+              {roles.length}
             </div>
-            <p className="text-xs text-gray-500">Role assignments</p>
+            <p className="text-xs text-gray-500">All roles</p>
           </CardContent>
         </Card>
       </div>

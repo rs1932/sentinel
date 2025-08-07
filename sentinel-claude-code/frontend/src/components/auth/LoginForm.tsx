@@ -10,7 +10,6 @@ import { apiClient } from '@/lib/api';
 import { APP_NAME, ROUTES } from '@/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
@@ -20,7 +19,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Eye, EyeOff, Loader2, Lock, Mail, AlertCircle, CheckCircle, Wifi, WifiOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Lock, Mail, AlertCircle, Building } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z
@@ -31,6 +30,10 @@ const loginSchema = z.object({
     .string()
     .min(1, 'Password is required')
     .min(6, 'Password must be at least 6 characters'),
+  tenant_code: z
+    .string()
+    .min(1, 'Tenant code is required')
+    .max(50, 'Tenant code must be less than 50 characters'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -47,6 +50,7 @@ export function LoginForm() {
     defaultValues: {
       email: '',
       password: '',
+      tenant_code: '',
     },
   });
 
@@ -60,6 +64,7 @@ export function LoginForm() {
       const response = await apiClient.auth.login({
         email: data.email,
         password: data.password,
+        tenant_code: data.tenant_code,
       });
 
       console.log('Login response:', response); // Debug log
@@ -69,10 +74,7 @@ export function LoginForm() {
         access_token, 
         refresh_token, 
         token_type, 
-        expires_in,
-        user_id,
-        tenant_id,
-        scope
+        expires_in
       } = response;
 
       // Store tokens
@@ -83,39 +85,59 @@ export function LoginForm() {
         expires_in,
       };
 
-      // Update API client with new token immediately
+      // Set token in API client for subsequent requests
       apiClient.setToken(access_token);
 
-      // Validate token to get user data
-      const userResponse = await apiClient.auth.validate();
+      // Get current user data
+      const userResponse = await apiClient.users.me();
 
-      console.log('User validation response:', userResponse); // Debug log
+      console.log('User data response:', userResponse); // Debug log
 
-      // Create user object from validation response
-      // Map scopes to roles - scopes are like ["user:read", "user:write", "tenant:admin"]
-      const roles = (userResponse.scopes || []).map((scope: string, index: number) => ({
-        id: `scope-${index}`,
-        name: scope,
-        display_name: scope.replace(':', ' ').replace('_', ' '),
-        type: scope.includes('admin') ? 'system' as const : 'custom' as const,
-        priority: scope.includes('admin') ? 100 : 50,
-        tenant_id: userResponse.tenant_id,
-        is_assignable: true,
-      }));
+      // Since roles aren't included in /users/me yet, create roles from token scopes
+      // Extract scopes from login response and map to roles
+      const scopes = response.scope ? response.scope.split(' ') : [];
+      const roles = scopes.map((scope: string, index: number) => {
+        // Map specific scopes to role types
+        let roleType: 'system' | 'custom' = 'custom';
+        let roleName = scope;
+        let priority = 50;
 
+        if (scope.includes('tenant:admin') || scope.includes('tenant:write')) {
+          roleType = 'system';
+          roleName = 'admin';
+          priority = 90;
+        } else if (scope.includes('user:admin')) {
+          roleType = 'system';
+          roleName = 'admin';  
+          priority = 100;
+        }
+
+        return {
+          id: `scope-${index}`,
+          name: roleName,
+          display_name: scope.replace(':', ' ').replace('_', ' '),
+          type: roleType,
+          priority,
+          tenant_id: response.tenant_id || userResponse.tenant_id,
+          is_assignable: true,
+        };
+      });
+
+      // Create user object from /users/me response
       const user = {
-        id: userResponse.user_id,
+        id: userResponse.id,
         email: userResponse.email || '',
-        first_name: '',
-        last_name: '',
+        first_name: userResponse.first_name || userResponse.username || '',
+        last_name: userResponse.last_name || '',
+        username: userResponse.username || '',
         tenant_id: userResponse.tenant_id,
-        user_type: userResponse.is_service_account ? 'service_account' as const : 'standard' as const,
-        is_active: true,
+        user_type: userResponse.user_type || 'standard' as const,
+        is_active: userResponse.is_active !== false,
         roles,
-        tenant: {
+        tenant: userResponse.tenant || {
           id: userResponse.tenant_id,
-          name: userResponse.tenant_name || 'Unknown',
-          display_name: userResponse.tenant_name || 'Unknown',
+          name: 'Unknown',
+          display_name: 'Unknown',
           type: 'root' as const,
           isolation_mode: 'shared' as const,
           features: [],
@@ -129,39 +151,48 @@ export function LoginForm() {
 
       // Navigate to dashboard
       router.push(ROUTES.DASHBOARD);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error details:', error);
-      console.error('Error type:', error?.errorType);
-      console.error('Error message:', error?.message);
-      console.error('Error status:', error?.status);
+      const err = error as { 
+        errorType?: string; 
+        message?: string; 
+        status?: number; 
+        error_description?: string; 
+        detail?: string;
+        retryAfter?: number;
+      };
+      
+      console.error('Error type:', err?.errorType);
+      console.error('Error message:', err?.message);
+      console.error('Error status:', err?.status);
       
       // Handle different error types based on backend error format
       let errorMessage = 'An unexpected error occurred. Please try again.';
       
       // Handle specific error types from documented API format
-      if (error?.errorType === 'authentication_failed' || error?.errorType === 'invalid_credentials') {
+      if (err?.errorType === 'authentication_failed' || err?.errorType === 'invalid_credentials') {
         errorMessage = 'Invalid email or password. Please check your credentials.';
-      } else if (error?.errorType === 'account_locked') {
-        const retryAfter = error?.retryAfter ? Math.ceil(error.retryAfter / 60) : 5;
+      } else if (err?.errorType === 'account_locked') {
+        const retryAfter = err?.retryAfter ? Math.ceil(err.retryAfter / 60) : 5;
         errorMessage = `Account locked due to too many failed attempts. Try again in ${retryAfter} minutes.`;
-      } else if (error?.errorType === 'tenant_not_found') {
+      } else if (err?.errorType === 'tenant_not_found') {
         errorMessage = 'Organization not found. Please check your organization code.';
-      } else if (error?.errorType === 'rate_limit_exceeded') {
-        const retryAfter = error?.retryAfter ? Math.ceil(error.retryAfter / 60) : 1;
+      } else if (err?.errorType === 'rate_limit_exceeded') {
+        const retryAfter = err?.retryAfter ? Math.ceil(err.retryAfter / 60) : 1;
         errorMessage = `Too many login attempts. Please wait ${retryAfter} minute(s) and try again.`;
-      } else if (error?.message && error.message !== 'Unauthorized') {
+      } else if (err?.message && err.message !== 'Unauthorized') {
         // Use backend message if it's not the generic "Unauthorized"
-        errorMessage = error.message;
-      } else if (error?.status === 401) {
+        errorMessage = err.message;
+      } else if (err?.status === 401) {
         // Fallback for 401 errors without specific error type
         errorMessage = 'Invalid email or password. Please check your credentials.';
-      } else if (error?.status === 403) {
+      } else if (err?.status === 403) {
         errorMessage = 'Your account has been suspended. Contact your administrator.';
-      } else if (error?.status === 422) {
+      } else if (err?.status === 422) {
         errorMessage = 'Invalid request format. Please check your input.';
-      } else if (error?.status === 429) {
+      } else if (err?.status === 429) {
         errorMessage = 'Too many login attempts. Please wait a moment and try again.';
-      } else if (error?.status === 0 || error?.message?.includes('Network')) {
+      } else if (err?.status === 0 || err?.message?.includes('Network')) {
         errorMessage = 'Unable to connect to the server. Please check your internet connection.';
       }
       
@@ -190,7 +221,7 @@ export function LoginForm() {
               Sign in to your account
             </CardTitle>
             <CardDescription className="text-center text-gray-600">
-              Enter your email and password to access your dashboard
+              Enter your organization code, email and password to access your dashboard
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -211,6 +242,31 @@ export function LoginForm() {
                           <Input
                             type="email"
                             placeholder="Enter your email"
+                            className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                            {...field}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Tenant Code field */}
+                <FormField
+                  control={form.control}
+                  name="tenant_code"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700 font-medium">
+                        Organization Code
+                      </FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <Input
+                            type="text"
+                            placeholder="Enter your organization code"
                             className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                             {...field}
                           />
