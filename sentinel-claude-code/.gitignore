@@ -155,3 +155,5 @@ htmlcov/
 # Logs
 logs/
 *.log
+
+.claude
