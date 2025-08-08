@@ -5,6 +5,7 @@ from src.models.token_blacklist import TokenBlacklist
 from src.models.role import Role, UserRole, RoleType
 from src.models.permission import Permission, RolePermission
 from src.models.resource import Resource, ResourceType
+from src.models.group import Group, UserGroup, GroupRole
 
 __all__ = [
     "Tenant",
@@ -17,5 +18,8 @@ __all__ = [
     "Permission",
     "RolePermission",
     "Resource",
-    "ResourceType"
+    "ResourceType",
+    "Group",
+    "UserGroup",
+    "GroupRole"
 ]

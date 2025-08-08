@@ -1,6 +1,7 @@
 """
 Authentication service for user login, logout, and token management
 """
+import os
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 from uuid import UUID
@@ -22,6 +23,13 @@ from src.schemas.auth import (
 from src.utils.jwt import jwt_manager, blacklist_manager
 from src.utils.password import password_manager, default_password_policy
 from src.core.exceptions import AuthenticationError, ValidationError, NotFoundError
+from src.services.rbac_service import RBACServiceFactory
+from src.utils.logging import get_logger
+
+logger = get_logger(__name__)
+
+# Feature flag for dynamic RBAC (can be set via environment variable)
+USE_DYNAMIC_RBAC = os.getenv("USE_DYNAMIC_RBAC", "true").lower() == "true"
 
 
 class AuthenticationService:
@@ -32,6 +40,13 @@ class AuthenticationService:
         self.jwt_manager = jwt_manager
         self.password_manager = password_manager
         self.password_policy = default_password_policy
+        self._rbac_service = None
+    
+    async def _get_rbac_service(self):
+        """Get or create RBAC service instance."""
+        if self._rbac_service is None:
+            self._rbac_service = await RBACServiceFactory.create(self.db)
+        return self._rbac_service
     
     async def authenticate_user(self, login_request: LoginRequest, device_info: Optional[DeviceInfo] = None) -> TokenResponse:
         """
@@ -104,7 +119,7 @@ class AuthenticationService:
             tenant_code=tenant.code,
             email=user.email,
             is_service_account=user.is_service_account,
-            scopes=self._get_user_scopes(user),
+            scopes=await self._get_user_scopes(user),
             session_id=session_id
         )
         
@@ -127,7 +142,7 @@ class AuthenticationService:
             expires_in=tokens["expires_in"],
             user_id=user.id,
             tenant_id=tenant.id,
-            scope=" ".join(self._get_user_scopes(user)) if self._get_user_scopes(user) else None
+            scope=" ".join(await self._get_user_scopes(user)) if await self._get_user_scopes(user) else None
         )
     
     async def authenticate_service_account(self, request: ServiceAccountTokenRequest) -> TokenResponse:
@@ -267,7 +282,7 @@ class AuthenticationService:
             tenant_code=tenant.code,
             email=user.email,
             is_service_account=user.is_service_account,
-            scopes=self._get_user_scopes(user),
+            scopes=await self._get_user_scopes(user),
             session_id=str(stored_token.id)  # Use refresh token ID as session ID
         )
         
@@ -367,10 +382,24 @@ class AuthenticationService:
         )
         await self.db.commit()
     
-    def _get_user_scopes(self, user: User) -> List[str]:
-        """Get user permissions/scopes (placeholder for future role system)"""
-        # TODO: Implement proper role-based scope resolution
-        # For now, return basic scopes based on user type
+    async def _get_user_scopes(self, user: User) -> List[str]:
+        """Get user permissions/scopes using dynamic RBAC or fallback to hardcoded."""
+        
+        if USE_DYNAMIC_RBAC:
+            try:
+                # Use dynamic RBAC service
+                rbac_service = await self._get_rbac_service()
+                scopes = await rbac_service.get_user_scopes(user)
+                logger.info(f"Dynamic RBAC resolved {len(scopes)} scopes for user {user.id}")
+                return scopes
+            
+            except Exception as e:
+                logger.error(f"Dynamic RBAC failed for user {user.id}: {e}")
+                logger.warning("Falling back to hardcoded scopes")
+                # Fall through to hardcoded logic
+        
+        # Hardcoded fallback logic (original implementation)
+        logger.info(f"Using hardcoded scopes for user {user.id}")
         
         # Check if user is super admin (on PLATFORM tenant)
         platform_tenant_id = "00000000-0000-0000-0000-000000000000"

@@ -19,6 +19,7 @@ from src.schemas.auth import (
 from src.core.exceptions import AuthenticationError, ValidationError
 from src.core.rate_limiting import rate_limit
 from src.core.security_utils import get_current_user, get_current_user_optional
+from src.services.rbac_service import RBACServiceFactory
 
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -408,3 +409,99 @@ async def introspect_token(
         "token_type": token_info.get("token_type", "access_token"),
         "tenant_id": token_info.get("tenant_id")
     }
+
+
+@router.get(
+    "/rbac-stats",
+    summary="Get RBAC performance statistics",
+    description="Get performance metrics for dynamic RBAC system (admin only)",
+    dependencies=[Depends(get_current_user)]
+)
+async def get_rbac_stats(
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get RBAC performance statistics and metrics."""
+    try:
+        # Create RBAC service to get stats
+        rbac_service = await RBACServiceFactory.create(db, use_cache=True)
+        
+        # Get performance statistics
+        stats = rbac_service.get_stats()
+        
+        # Calculate additional metrics
+        total_resolutions = stats["permission_resolutions"]
+        cache_efficiency = 0.0
+        if stats["cache_hits"] + stats["cache_misses"] > 0:
+            cache_efficiency = stats["cache_hits"] / (stats["cache_hits"] + stats["cache_misses"]) * 100
+        
+        avg_db_queries = 0.0
+        if total_resolutions > 0:
+            avg_db_queries = stats["db_queries"] / total_resolutions
+        
+        return {
+            "rbac_enabled": True,
+            "statistics": {
+                "permission_resolutions": total_resolutions,
+                "cache_hits": stats["cache_hits"],
+                "cache_misses": stats["cache_misses"],
+                "cache_efficiency_percent": round(cache_efficiency, 2),
+                "db_queries_total": stats["db_queries"],
+                "avg_db_queries_per_resolution": round(avg_db_queries, 2)
+            },
+            "performance": {
+                "cache_enabled": True,
+                "cache_type": "in_memory",
+                "cache_ttl_seconds": 300
+            },
+            "system_info": {
+                "feature_flag": "USE_DYNAMIC_RBAC",
+                "fallback_available": True,
+                "user_tenant": str(current_user.tenant_id),
+                "user_service_account": current_user.is_service_account
+            }
+        }
+        
+    except Exception as e:
+        # Return basic info even if stats collection fails
+        return {
+            "rbac_enabled": True,
+            "error": f"Failed to collect stats: {str(e)}",
+            "statistics": {
+                "permission_resolutions": 0,
+                "cache_hits": 0,
+                "cache_misses": 0,
+                "cache_efficiency_percent": 0.0,
+                "db_queries_total": 0,
+                "avg_db_queries_per_resolution": 0.0
+            }
+        }
+
+
+@router.post(
+    "/rbac-invalidate-cache/{user_id}",
+    summary="Invalidate user RBAC cache", 
+    description="Manually invalidate RBAC cache for a specific user (admin only)",
+    dependencies=[Depends(get_current_user)]
+)
+async def invalidate_user_rbac_cache(
+    user_id: UUID,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Manually invalidate RBAC cache for a user."""
+    try:
+        rbac_service = await RBACServiceFactory.create(db, use_cache=True)
+        await rbac_service.invalidate_user_cache(user_id)
+        
+        return {
+            "success": True,
+            "message": f"Cache invalidated for user {user_id}",
+            "invalidated_by": str(current_user.id)
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to invalidate cache: {str(e)}"
+        )
