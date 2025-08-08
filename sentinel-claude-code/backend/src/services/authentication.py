@@ -378,11 +378,12 @@ class AuthenticationService:
         
         if user.is_service_account:
             return [
-                "api:read", "api:write", 
+                "api:read", "api:write",
                 "tenant:read", "tenant:write", "tenant:admin",
                 "user:read", "user:write", "user:admin",
                 "service_account:read", "service_account:write", "service_account:admin",
-                "role:read", "role:write", "role:admin"
+                "role:read", "role:write", "role:admin",
+                "group:read", "group:write", "group:admin"
             ]
         elif is_super_admin:
             # Super admin gets global scopes across all tenants
@@ -393,17 +394,19 @@ class AuthenticationService:
                 "user:read", "user:write", "user:admin", "user:global",
                 "service_account:read", "service_account:write", "service_account:admin", "service_account:global",
                 "role:read", "role:write", "role:admin", "role:global",
+                "group:read", "group:write", "group:admin", "group:global",
                 "system:admin",  # System-level administration
                 "audit:read", "audit:write"  # Audit log access
             ]
         else:
             # Regular tenant users
             return [
-                "user:profile", 
+                "user:profile",
                 "tenant:read", "tenant:write", "tenant:admin",
                 "user:read", "user:write", "user:admin",
                 "service_account:read", "service_account:write", "service_account:admin",
-                "role:read", "role:write", "role:admin"
+                "role:read", "role:write", "role:admin",
+                "group:read", "group:write", "group:admin"
             ]
     
     async def _validate_service_account_scopes(self, user: User, requested_scopes: List[str]) -> List[str]:

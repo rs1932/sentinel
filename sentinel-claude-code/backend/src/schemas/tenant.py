@@ -103,11 +103,11 @@ class TenantResponse(BaseModel):
     isolation_mode: IsolationMode
     settings: Dict[str, Any]
     features: List[str]
-    metadata: Dict[str, Any]
+    metadata: Dict[str, Any] = Field(default_factory=dict, alias="tenant_metadata")
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
-    
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
     class Config:
         from_attributes = True
         use_enum_values = True
