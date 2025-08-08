@@ -384,7 +384,8 @@ class AuthenticationService:
                 "service_account:read", "service_account:write", "service_account:admin",
                 "role:read", "role:write", "role:admin",
                 "group:read", "group:write", "group:admin",
-                "permission:read", "permission:write", "permission:admin"
+                "permission:read", "permission:write", "permission:admin",
+                "resource:read", "resource:write", "resource:admin"
             ]
         elif is_super_admin:
             # Super admin gets global scopes across all tenants
@@ -397,6 +398,7 @@ class AuthenticationService:
                 "role:read", "role:write", "role:admin", "role:global",
                 "group:read", "group:write", "group:admin", "group:global",
                 "permission:read", "permission:write", "permission:admin", "permission:global",
+                "resource:read", "resource:write", "resource:admin", "resource:global",
                 "system:admin",  # System-level administration
                 "audit:read", "audit:write"  # Audit log access
             ]
@@ -409,7 +411,8 @@ class AuthenticationService:
                 "service_account:read", "service_account:write", "service_account:admin",
                 "role:read", "role:write", "role:admin",
                 "group:read", "group:write", "group:admin",
-                "permission:read", "permission:write", "permission:admin"
+                "permission:read", "permission:write", "permission:admin",
+                "resource:read", "resource:write", "resource:admin"
             ]
     
     async def _validate_service_account_scopes(self, user: User, requested_scopes: List[str]) -> List[str]:

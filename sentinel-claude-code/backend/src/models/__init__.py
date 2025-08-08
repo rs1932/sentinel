@@ -4,6 +4,7 @@ from src.models.refresh_token import RefreshToken
 from src.models.token_blacklist import TokenBlacklist
 from src.models.role import Role, UserRole, RoleType
 from src.models.permission import Permission, RolePermission
+from src.models.resource import Resource, ResourceType
 
 __all__ = [
     "Tenant",
@@ -14,5 +15,7 @@ __all__ = [
     "UserRole", 
     "RoleType",
     "Permission",
-    "RolePermission"
+    "RolePermission",
+    "Resource",
+    "ResourceType"
 ]

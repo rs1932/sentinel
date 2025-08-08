@@ -26,8 +26,8 @@ class Permission(BaseModel):
         "product_family", "app", "capability", "service", "entity", "page", "api",
         name="resource_type", schema="sentinel"
     ), nullable=False)
-    # Optional direct resource anchor. No ORM FK to avoid test DB dependency on resources table
-    resource_id = Column(UUID(as_uuid=True), nullable=True)
+    # Direct resource anchor with proper foreign key relationship  
+    resource_id = Column(UUID(as_uuid=True), ForeignKey("sentinel.resources.id", ondelete="CASCADE"), nullable=True)
     resource_path = Column(Text, nullable=True)
 
     # Actions and conditions
@@ -43,6 +43,7 @@ class Permission(BaseModel):
 
     # Relationships
     tenant = relationship("Tenant")
+    resource = relationship("Resource", back_populates="permissions")
 
     def __repr__(self) -> str:
         return f"<Permission(id='{self.id}', name='{self.name}', type='{self.resource_type}')>"

@@ -8,6 +8,7 @@ from src.api.v1.avatars import router as avatars_router
 from src.api.v1.roles import router as roles_router
 from src.api.v1.groups import router as groups_router
 from src.api.v1.permissions import router as permissions_router
+from src.api.v1.resources import router as resources_router
 
 api_router = APIRouter(prefix="/api/v1")
 
@@ -21,5 +22,6 @@ api_router.include_router(service_accounts_router)
 api_router.include_router(roles_router)
 api_router.include_router(groups_router)
 api_router.include_router(permissions_router)
+api_router.include_router(resources_router)
 
 __all__ = ["api_router"]

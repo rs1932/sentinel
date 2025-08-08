@@ -37,6 +37,7 @@ class Tenant(BaseModel):
     parent = relationship("Tenant", remote_side="Tenant.id", backref="sub_tenants")
     users = relationship("User", back_populates="tenant")
     roles = relationship("Role", back_populates="tenant")
+    resources = relationship("Resource", back_populates="tenant", cascade="all, delete-orphan")
     
     def __init__(self, **kwargs):
         # Handle API compatibility: map 'metadata' to 'tenant_metadata'
