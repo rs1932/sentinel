@@ -6,6 +6,8 @@ import {
   LayoutDashboard,
   UserCog,
   Home,
+  UsersRound,
+  Lock,
 } from 'lucide-react';
 import { MenuItem } from '@/types';
 import { ROUTES } from '@/constants';
@@ -34,10 +36,24 @@ export const NAVIGATION_MENUS: Record<string, MenuItem[]> = {
       roles: ['super_admin'],
     },
     {
+      id: 'groups',
+      label: 'Groups',
+      icon: UsersRound,
+      path: ROUTES.GROUPS,
+      roles: ['super_admin'],
+    },
+    {
       id: 'roles',
       label: 'Roles',
       icon: Shield,
       path: ROUTES.ROLES,
+      roles: ['super_admin'],
+    },
+    {
+      id: 'permissions',
+      label: 'Permissions',
+      icon: Lock,
+      path: ROUTES.PERMISSIONS,
       roles: ['super_admin'],
     },
     {
@@ -64,10 +80,24 @@ export const NAVIGATION_MENUS: Record<string, MenuItem[]> = {
       roles: ['tenant_admin'],
     },
     {
+      id: 'groups',
+      label: 'Groups',
+      icon: UsersRound,
+      path: ROUTES.GROUPS,
+      roles: ['tenant_admin'],
+    },
+    {
       id: 'roles',
       label: 'Roles',
       icon: Shield,
       path: ROUTES.ROLES,
+      roles: ['tenant_admin'],
+    },
+    {
+      id: 'permissions',
+      label: 'Permissions',
+      icon: Lock,
+      path: ROUTES.PERMISSIONS,
       roles: ['tenant_admin'],
     },
     {

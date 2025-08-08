@@ -28,6 +28,38 @@ export interface Role {
   role_metadata?: Record<string, any>;
 }
 
+export interface Group {
+  id: string;
+  tenant_id: string;
+  name: string;
+  display_name?: string;
+  description?: string;
+  parent_group_id?: string;
+  metadata: Record<string, any>;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Permission {
+  id: string;
+  tenant_id: string;
+  name: string;
+  resource_type: 'product_family' | 'app' | 'capability' | 'service' | 'entity' | 'page' | 'api';
+  resource_id?: string;
+  resource_path?: string;
+  actions: Array<'create' | 'read' | 'update' | 'delete' | 'execute' | 'approve' | 'reject'>;
+  conditions: Record<string, any>;
+  field_permissions: Record<string, Array<'read' | 'write' | 'hidden'>>;
+  is_active: boolean;
+}
+
+export interface RolePermission {
+  role_id: string;
+  permission: Permission;
+  granted_by?: string;
+}
+
 export interface Tenant {
   id: string;
   name: string;

@@ -16,31 +16,35 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Search, Plus, MoreHorizontal, Shield, Users } from 'lucide-react';
-import { CreateRoleDialog } from '@/components/roles/CreateRoleDialog';
+import { Search, Plus, MoreHorizontal, UsersRound, Users, FolderTree } from 'lucide-react';
+import { Group } from '@/types';
+import { CreateGroupDialog } from '@/components/groups/CreateGroupDialog';
+import { EditGroupDialog } from '@/components/groups/EditGroupDialog';
 
-export function RolesManagement() {
+export function GroupsManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const { userRole } = useAuthStore();
 
-  const canManageRoles = userRole === 'super_admin' || userRole === 'tenant_admin';
+  const canManageGroups = userRole === 'super_admin' || userRole === 'tenant_admin';
 
-  // Fetch roles from API
+  // Fetch groups from API
   const {
-    data: rolesResponse,
+    data: groupsResponse,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['roles'],
-    queryFn: () => apiClient.roles.list(),
+    queryKey: ['groups'],
+    queryFn: () => apiClient.groups.list(),
     retry: 1,
   });
 
-  const roles = rolesResponse?.items || rolesResponse || [];
+  const groups: Group[] = groupsResponse?.items || groupsResponse || [];
 
-  const filteredRoles = roles.filter((role: any) =>
-    `${role.display_name || role.name} ${role.description} ${role.name}`
+  const filteredGroups = groups.filter((group: Group) =>
+    `${group.display_name || group.name} ${group.description} ${group.name}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
@@ -50,8 +54,8 @@ export function RolesManagement() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Role Management</h1>
-            <p className="text-gray-600">Loading roles...</p>
+            <h1 className="text-2xl font-bold text-gray-900">Group Management</h1>
+            <p className="text-gray-600">Loading groups...</p>
           </div>
         </div>
         <Card>
@@ -70,14 +74,14 @@ export function RolesManagement() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Role Management</h1>
-            <p className="text-gray-600">Unable to load roles</p>
+            <h1 className="text-2xl font-bold text-gray-900">Group Management</h1>
+            <p className="text-gray-600">Unable to load groups</p>
           </div>
         </div>
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-12">
-              <p className="text-red-600">Failed to load roles. The roles API may not be fully implemented yet.</p>
+              <p className="text-red-600">Failed to load groups. Please try again.</p>
               <p className="text-gray-500 mt-2">Error: {error?.message || 'Unknown error'}</p>
             </div>
           </CardContent>
@@ -86,21 +90,19 @@ export function RolesManagement() {
     );
   }
 
-  const getRoleTypeColor = (type: string) => {
-    switch (type) {
-      case 'system':
-        return 'bg-blue-100 text-blue-800 hover:bg-blue-100';
-      case 'custom':
-        return 'bg-green-100 text-green-800 hover:bg-green-100';
-      default:
-        return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
-    }
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
   };
 
-  const getPriorityColor = (priority: number) => {
-    if (priority >= 90) return 'bg-red-100 text-red-800 hover:bg-red-100';
-    if (priority >= 50) return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100';
-    return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
+  const getGroupIcon = (group: Group) => {
+    if (group.parent_group_id) {
+      return <FolderTree className="h-4 w-4 text-blue-600" />;
+    }
+    return <UsersRound className="h-4 w-4 text-blue-600" />;
   };
 
   return (
@@ -108,18 +110,18 @@ export function RolesManagement() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Role Management</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Group Management</h1>
           <p className="text-gray-600">
-            Manage roles and their permissions across your organization
+            Organize users with hierarchical groups and role assignments
           </p>
         </div>
-        {canManageRoles && (
+        {canManageGroups && (
           <Button 
             className="bg-blue-600 hover:bg-blue-700"
             onClick={() => setCreateDialogOpen(true)}
           >
             <Plus className="mr-2 h-4 w-4" />
-            Create Role
+            Create Group
           </Button>
         )}
       </div>
@@ -129,16 +131,16 @@ export function RolesManagement() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Roles</CardTitle>
+              <CardTitle>Groups</CardTitle>
               <CardDescription>
-                {filteredRoles.length} role{filteredRoles.length !== 1 ? 's' : ''} found
+                {filteredGroups.length} group{filteredGroups.length !== 1 ? 's' : ''} found
               </CardDescription>
             </div>
             <div className="flex items-center space-x-2">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Search roles..."
+                  placeholder="Search groups..."
                   className="pl-10 w-64"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -153,68 +155,64 @@ export function RolesManagement() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[50px]"></TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Users</TableHead>
+                  <TableHead>Group</TableHead>
+                  <TableHead>Parent Group</TableHead>
+                  <TableHead>Members</TableHead>
                   <TableHead>Status</TableHead>
-                  {canManageRoles && (
+                  <TableHead>Created</TableHead>
+                  {canManageGroups && (
                     <TableHead className="w-[50px]">Actions</TableHead>
                   )}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRoles.map((role) => (
-                  <TableRow key={role.id}>
+                {filteredGroups.map((group) => (
+                  <TableRow key={group.id}>
                     <TableCell>
                       <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <Shield className="h-4 w-4 text-blue-600" />
+                        {getGroupIcon(group)}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{role.display_name}</div>
-                        <div className="text-sm text-gray-500">{role.description}</div>
+                        <div className="font-medium">{group.display_name || group.name}</div>
+                        <div className="text-sm text-gray-500">{group.description}</div>
                         <div className="text-xs text-gray-400 mt-1">
-                          ID: {role.name}
+                          ID: {group.name}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={getRoleTypeColor(role.type)}
-                      >
-                        {role.type === 'system' ? 'System' : 'Custom'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={getPriorityColor(role.priority)}
-                      >
-                        {role.priority}
-                      </Badge>
+                      {group.parent_group_id ? (
+                        <Badge variant="outline" className="bg-gray-50">
+                          Parent Group
+                        </Badge>
+                      ) : (
+                        <span className="text-gray-400 text-sm">Root Group</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center text-sm">
                         <Users className="mr-1 h-3 w-3 text-gray-400" />
-                        {role.user_count}
+                        0 {/* TODO: Add member count from API */}
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={role.is_assignable ? "default" : "secondary"}
+                        variant={group.is_active ? "default" : "secondary"}
                         className={
-                          role.is_assignable
+                          group.is_active
                             ? "bg-green-100 text-green-800 hover:bg-green-100"
                             : "bg-gray-100 text-gray-800 hover:bg-gray-100"
                         }
                       >
-                        {role.is_assignable ? 'Assignable' : 'System Only'}
+                        {group.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </TableCell>
-                    {canManageRoles && (
+                    <TableCell className="text-sm text-gray-500">
+                      {formatDate(group.created_at)}
+                    </TableCell>
+                    {canManageGroups && (
                       <TableCell>
                         <Button variant="ghost" size="sm">
                           <MoreHorizontal className="h-4 w-4" />
@@ -234,50 +232,55 @@ export function RolesManagement() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-gray-600">
-              System Roles
+              Total Groups
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {roles.filter((r: any) => r.type === 'system').length}
+              {groups.length}
             </div>
-            <p className="text-xs text-gray-500">Built-in roles</p>
+            <p className="text-xs text-gray-500">All groups</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-gray-600">
-              Custom Roles
+              Root Groups
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {roles.filter((r: any) => r.type === 'custom').length}
+              {groups.filter((g: Group) => !g.parent_group_id).length}
             </div>
-            <p className="text-xs text-gray-500">Organization-specific</p>
+            <p className="text-xs text-gray-500">Top-level groups</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-gray-600">
-              Total Roles
+              Active Groups
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {roles.length}
+              {groups.filter((g: Group) => g.is_active).length}
             </div>
-            <p className="text-xs text-gray-500">All roles</p>
+            <p className="text-xs text-gray-500">Currently active</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Dialogs */}
-      <CreateRoleDialog 
+      <CreateGroupDialog 
         open={createDialogOpen} 
         onOpenChange={setCreateDialogOpen} 
+      />
+      <EditGroupDialog 
+        open={editDialogOpen} 
+        onOpenChange={setEditDialogOpen}
+        group={selectedGroup}
       />
     </div>
   );

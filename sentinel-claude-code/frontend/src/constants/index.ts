@@ -42,6 +42,8 @@ export const ROUTES = {
   USERS: '/users',
   TENANTS: '/tenants',
   ROLES: '/roles',
+  GROUPS: '/groups',
+  PERMISSIONS: '/permissions',
   SETTINGS: '/settings',
 } as const;
 

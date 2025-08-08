@@ -1,6 +1,8 @@
 export { DashboardOverview } from './DashboardOverview';
-export { UsersManagement } from './UsersManagement';
+export { GroupsManagement } from './GroupsManagement';
+export { PermissionsManagement } from './PermissionsManagement';
 export { ProfileManagement } from './ProfileManagement';
 export { RolesManagement } from './RolesManagement';
-export { TenantsManagement } from './TenantsManagement';
 export { SettingsManagement } from './SettingsManagement';
+export { TenantsManagement } from './TenantsManagement';
+export { UsersManagement } from './UsersManagement';
