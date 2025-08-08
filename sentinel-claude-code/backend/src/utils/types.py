@@ -2,7 +2,7 @@
 Database-agnostic type utilities for SQLAlchemy models
 """
 from sqlalchemy import TypeDecorator, String, Text, event
-from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID, ARRAY as PostgreSQLArray
+from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID, ARRAY as PostgreSQLArray, JSONB as PostgreSQLJSONB
 from sqlalchemy.engine import Engine
 import uuid
 import sqlite3
@@ -90,6 +90,47 @@ class ARRAY(TypeDecorator):
                 except (json.JSONDecodeError, TypeError):
                     return []
             return value if isinstance(value, list) else []
+
+
+class JSONB(TypeDecorator):
+    """
+    Platform-independent JSONB type.
+    Uses PostgreSQL's JSONB type when available,
+    otherwise uses TEXT for SQLite.
+    """
+    impl = Text
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(PostgreSQLJSONB())
+        else:
+            return dialect.type_descriptor(Text())
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        elif dialect.name == 'postgresql':
+            return value
+        else:
+            # For SQLite, convert dict/list to JSON string
+            if isinstance(value, (dict, list)):
+                return json.dumps(value)
+            return value
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+        elif dialect.name == 'postgresql':
+            return value
+        else:
+            # For SQLite, convert JSON string back to dict/list
+            if isinstance(value, str):
+                try:
+                    return json.loads(value)
+                except (json.JSONDecodeError, TypeError):
+                    return {}
+            return value if isinstance(value, (dict, list)) else {}
 
 
 # Enable UUID support for SQLite

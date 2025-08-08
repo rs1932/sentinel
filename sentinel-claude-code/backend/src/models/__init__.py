@@ -3,6 +3,7 @@ from src.models.user import User
 from src.models.refresh_token import RefreshToken
 from src.models.token_blacklist import TokenBlacklist
 from src.models.role import Role, UserRole, RoleType
+from src.models.permission import Permission, RolePermission
 
 __all__ = [
     "Tenant",
@@ -11,5 +12,7 @@ __all__ = [
     "TokenBlacklist",
     "Role",
     "UserRole", 
-    "RoleType"
+    "RoleType",
+    "Permission",
+    "RolePermission"
 ]

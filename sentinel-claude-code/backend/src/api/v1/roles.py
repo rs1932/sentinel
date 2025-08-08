@@ -25,6 +25,9 @@ from src.schemas.role import (
     BulkRoleAssignmentRequest, BulkRoleAssignmentResponse, RoleHierarchyResponse,
     RoleValidationResponse
 )
+from src.schemas.permission import (
+    RolePermissionAssignmentRequest, RolePermissionResponse, RolePermissionsListResponse
+)
 from src.core.exceptions import ValidationError, NotFoundError, ConflictError
 
 
@@ -315,3 +318,137 @@ async def validate_role_hierarchy(
         parent_role_id=parent_role_id,
         tenant_id=current_user.tenant_id
     )
+
+
+# Role-Permission Management Endpoints
+
+@router.post(
+    "/{role_id}/permissions",
+    response_model=List[RolePermissionResponse],
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_scope("role:admin"))],
+    summary="Assign permissions to role",
+    description="Assign permissions to a role (can create new permissions or reference existing ones)"
+)
+async def assign_permissions_to_role(
+    role_id: UUID,
+    assignment_request: RolePermissionAssignmentRequest,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+) -> List[RolePermissionResponse]:
+    """
+    Assign permissions to a role.
+    
+    Requires:
+    - JWT authentication
+    - role:admin scope
+    """
+    try:
+        from src.services.role_permission_service import RolePermissionService
+        service = RolePermissionService(db)
+        return await service.assign_permissions_to_role(
+            role_id, 
+            current_user.tenant_id,
+            assignment_request.permissions,
+            granted_by=current_user.user_id
+        )
+        
+    except NotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to assign permissions")
+
+
+@router.get(
+    "/{role_id}/permissions",
+    response_model=RolePermissionsListResponse,
+    dependencies=[Depends(require_scope("role:read"))],
+    summary="Get role permissions",
+    description="Get all permissions assigned to a role (including inherited permissions)"
+)
+async def get_role_permissions(
+    role_id: UUID,
+    include_inherited: bool = Query(True, description="Include permissions from parent roles"),
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+) -> RolePermissionsListResponse:
+    """
+    Get all permissions assigned to a role.
+    
+    Requires:
+    - JWT authentication
+    - role:read scope
+    """
+    try:
+        from src.services.role_permission_service import RolePermissionService
+        service = RolePermissionService(db)
+        return await service.get_role_permissions(role_id, current_user.tenant_id, include_inherited)
+        
+    except NotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to get role permissions")
+
+
+@router.delete(
+    "/{role_id}/permissions/{permission_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_scope("role:admin"))],
+    summary="Remove permission from role",
+    description="Remove a specific permission from a role"
+)
+async def remove_permission_from_role(
+    role_id: UUID,
+    permission_id: UUID,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Remove a specific permission from a role.
+    
+    Requires:
+    - JWT authentication
+    - role:admin scope
+    """
+    try:
+        from src.services.role_permission_service import RolePermissionService
+        service = RolePermissionService(db)
+        success = await service.remove_permission_from_role(role_id, permission_id, current_user.tenant_id)
+        
+        if not success:
+            raise HTTPException(status_code=404, detail="Role-permission assignment not found")
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to remove permission")
+
+
+@router.delete(
+    "/{role_id}/permissions",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_scope("role:admin"))],
+    summary="Remove all permissions from role",
+    description="Remove all permissions from a role"
+)
+async def remove_all_permissions_from_role(
+    role_id: UUID,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Remove all permissions from a role.
+    
+    Requires:
+    - JWT authentication
+    - role:admin scope
+    """
+    try:
+        from src.services.role_permission_service import RolePermissionService
+        service = RolePermissionService(db)
+        await service.remove_all_permissions_from_role(role_id, current_user.tenant_id)
+        
+    except NotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to remove permissions")
