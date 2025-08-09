@@ -6,6 +6,8 @@ from src.models.role import Role, UserRole, RoleType
 from src.models.permission import Permission, RolePermission
 from src.models.resource import Resource, ResourceType
 from src.models.group import Group, UserGroup, GroupRole
+from src.models.field_definition import FieldDefinition
+from src.models.field_definition_types import FieldType, FieldDataType, FieldPermission
 
 __all__ = [
     "Tenant",
@@ -21,5 +23,9 @@ __all__ = [
     "ResourceType",
     "Group",
     "UserGroup",
-    "GroupRole"
+    "GroupRole",
+    "FieldDefinition",
+    "FieldType",
+    "FieldDataType", 
+    "FieldPermission"
 ]

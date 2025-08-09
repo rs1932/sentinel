@@ -4,6 +4,7 @@ from .tenant import *
 from .user import *
 from .role import *
 from .group import *
+from .field_definition import *
 
 __all__ = [
     # Auth schemas
@@ -47,4 +48,15 @@ __all__ = [
     "GroupListResponse",
     "GroupUserAddRequest",
     "GroupRoleAssignRequest",
+
+    # Field Definition schemas
+    "FieldDefinitionCreateRequest",
+    "FieldDefinitionCreate",
+    "FieldDefinitionUpdate",
+    "FieldDefinitionResponse",
+    "FieldDefinitionDetailResponse",
+    "FieldDefinitionListResponse",
+    "FieldDefinitionQuery",
+    "FieldPermissionCheck",
+    "FieldPermissionResponse",
 ]
