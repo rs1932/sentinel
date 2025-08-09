@@ -51,6 +51,7 @@ class User(MetadataMixin, BaseModel):
     tenant = relationship("Tenant", back_populates="users")
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
     role_assignments = relationship("UserRole", foreign_keys="UserRole.user_id", back_populates="user", cascade="all, delete-orphan")
+    menu_customizations = relationship("UserMenuCustomization", back_populates="user", cascade="all, delete-orphan")
     
     def __init__(self, **kwargs):
         # Handle service account initialization

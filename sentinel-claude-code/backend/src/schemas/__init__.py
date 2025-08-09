@@ -5,6 +5,7 @@ from .user import *
 from .role import *
 from .group import *
 from .field_definition import *
+from .menu import *
 
 __all__ = [
     # Auth schemas
@@ -59,4 +60,20 @@ __all__ = [
     "FieldDefinitionQuery",
     "FieldPermissionCheck",
     "FieldPermissionResponse",
+    
+    # Menu schemas
+    "MenuItemCreateRequest",
+    "MenuItemCreate",
+    "MenuItemUpdate",
+    "MenuItemResponse",
+    "MenuItemWithChildren",
+    "UserMenuCustomizationCreate",
+    "UserMenuCustomizationUpdate",
+    "UserMenuCustomizationResponse",
+    "MenuQuery",
+    "MenuItemListResponse",
+    "UserMenuResponse",
+    "MenuCustomizationBatch",
+    "MenuCustomizationBatchResponse",
+    "MenuStatistics",
 ]

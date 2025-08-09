@@ -8,6 +8,7 @@ from src.models.resource import Resource, ResourceType
 from src.models.group import Group, UserGroup, GroupRole
 from src.models.field_definition import FieldDefinition
 from src.models.field_definition_types import FieldType, FieldDataType, FieldPermission
+from src.models.menu import MenuItem, UserMenuCustomization
 
 __all__ = [
     "Tenant",
@@ -27,5 +28,7 @@ __all__ = [
     "FieldDefinition",
     "FieldType",
     "FieldDataType", 
-    "FieldPermission"
+    "FieldPermission",
+    "MenuItem",
+    "UserMenuCustomization"
 ]

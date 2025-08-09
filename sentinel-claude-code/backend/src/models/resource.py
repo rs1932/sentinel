@@ -92,6 +92,13 @@ class Resource(BaseModel):
         passive_deletes=True
     )
     
+    # Menu items relationship
+    menu_items = relationship(
+        "MenuItem",
+        back_populates="resource",
+        passive_deletes=True
+    )
+    
     # Note: Unique constraint for code within tenant and type is handled in the database migration
     
     @validates('type')
