@@ -31,9 +31,9 @@ const createTenantSchema = z.object({
     .min(1, 'Tenant code is required')
     .max(50, 'Code must be less than 50 characters')
     .regex(/^[A-Z0-9][A-Z0-9-]*$/, 'Code must contain only uppercase letters, numbers, and hyphens'),
-  type: z.enum(['root', 'sub_tenant']).default('root'),
-  isolation_mode: z.enum(['shared', 'dedicated']).default('shared'),
-  features: z.array(z.string()).default([]),
+  type: z.enum(['root', 'sub_tenant']),
+  isolation_mode: z.enum(['shared', 'dedicated']),
+  features: z.array(z.string()),
 });
 
 type CreateTenantForm = z.infer<typeof createTenantSchema>;

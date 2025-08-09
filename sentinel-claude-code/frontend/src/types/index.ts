@@ -3,16 +3,16 @@ export interface User {
   id: string;
   email: string;
   username?: string;
-  first_name: string;
-  last_name: string;
+  first_name?: string;
+  last_name?: string;
   tenant_id: string;
-  user_type: 'standard' | 'service_account';
+  user_type?: 'standard' | 'service_account';
   attributes?: Record<string, any>;
   preferences?: Record<string, any>;
   avatar_url?: string;
   is_active: boolean;
-  roles: Role[];
-  tenant: Tenant;
+  roles?: Role[];
+  tenant?: Tenant;
 }
 
 export interface Role {
@@ -48,10 +48,12 @@ export interface Permission {
   resource_type: 'product_family' | 'app' | 'capability' | 'service' | 'entity' | 'page' | 'api';
   resource_id?: string;
   resource_path?: string;
-  actions: Array<'create' | 'read' | 'update' | 'delete' | 'execute' | 'approve' | 'reject'>;
+  actions: Array<'create' | 'read' | 'write' | 'update' | 'delete' | 'execute' | 'approve' | 'reject'>;
   conditions: Record<string, any>;
   field_permissions: Record<string, Array<'read' | 'write' | 'hidden'>>;
   is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface RolePermission {
@@ -113,6 +115,36 @@ export interface DashboardStats {
   total_tenants: number;
   active_tenants: number;
   total_roles: number;
+}
+
+// Resource types
+export interface Resource {
+  id: string;
+  tenant_id: string;
+  type: 'product_family' | 'app' | 'capability' | 'service' | 'entity' | 'page' | 'api';
+  name: string;
+  code: string;
+  description?: string;
+  parent_id?: string;
+  path: string;
+  level: number;
+  metadata: Record<string, any>;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ResourceHierarchy extends Resource {
+  children?: ResourceHierarchy[];
+  permission_count?: number;
+}
+
+export interface ResourceStatistics {
+  total_resources: number;
+  active_resources: number;
+  resources_by_type: Record<string, number>;
+  max_depth: number;
+  total_permissions: number;
 }
 
 // Re-export tenant types

@@ -8,6 +8,7 @@ import {
   Home,
   UsersRound,
   Lock,
+  Package,
 } from 'lucide-react';
 import { MenuItem } from '@/types';
 import { ROUTES } from '@/constants';
@@ -57,6 +58,13 @@ export const NAVIGATION_MENUS: Record<string, MenuItem[]> = {
       roles: ['super_admin'],
     },
     {
+      id: 'resources',
+      label: 'Resources',
+      icon: Package,
+      path: ROUTES.RESOURCES,
+      roles: ['super_admin'],
+    },
+    {
       id: 'settings',
       label: 'Settings',
       icon: Settings,
@@ -98,6 +106,13 @@ export const NAVIGATION_MENUS: Record<string, MenuItem[]> = {
       label: 'Permissions',
       icon: Lock,
       path: ROUTES.PERMISSIONS,
+      roles: ['tenant_admin'],
+    },
+    {
+      id: 'resources',
+      label: 'Resources',
+      icon: Package,
+      path: ROUTES.RESOURCES,
       roles: ['tenant_admin'],
     },
     {

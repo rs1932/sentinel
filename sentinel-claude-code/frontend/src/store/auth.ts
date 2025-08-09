@@ -26,22 +26,40 @@ interface AuthActions {
 
 // Helper function to determine user role
 const determineUserRole = (user: User): UserRole => {
-  // Check if user has super admin role
-  const hasSystemAdminRole = user.roles.some(
-    (role) => role.type === 'system' && role.name === 'admin'
-  );
-  
-  if (hasSystemAdminRole) {
+  // First check if user has role info in attributes (for superadmin)
+  if (user.attributes?.role) {
+    if (user.attributes.role === 'superadmin') {
+      return 'super_admin';
+    }
+    if (user.attributes.role.includes('admin')) {
+      return 'tenant_admin';
+    }
+  }
+
+  // Check if user is on PLATFORM tenant (superadmin tenant)
+  if (user.tenant?.code === 'PLATFORM' || user.tenant_id === '00000000-0000-0000-0000-000000000000') {
     return 'super_admin';
   }
-  
-  // Check if user has tenant admin role
-  const hasTenantAdminRole = user.roles.some(
-    (role) => role.name.includes('admin') || role.name === 'tenant_admin'
-  );
-  
-  if (hasTenantAdminRole) {
-    return 'tenant_admin';
+
+  // Check if user has formal role assignments
+  if (user.roles && user.roles.length > 0) {
+    // Check for system admin roles
+    const hasSystemAdminRole = user.roles.some(
+      (role) => role.type === 'system' && (role.name === 'admin' || role.name === 'superadmin')
+    );
+    
+    if (hasSystemAdminRole) {
+      return 'super_admin';
+    }
+    
+    // Check for tenant admin roles
+    const hasTenantAdminRole = user.roles.some(
+      (role) => role.name.toLowerCase().includes('admin') || role.name === 'tenant_admin' || role.name.toLowerCase().includes('manager')
+    );
+    
+    if (hasTenantAdminRole) {
+      return 'tenant_admin';
+    }
   }
   
   return 'user';

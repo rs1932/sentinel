@@ -164,7 +164,7 @@ export function RolesManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRoles.map((role) => (
+                {filteredRoles.map((role: any) => (
                   <TableRow key={role.id}>
                     <TableCell>
                       <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">

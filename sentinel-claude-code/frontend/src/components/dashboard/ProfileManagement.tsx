@@ -205,7 +205,7 @@ export function ProfileManagement() {
               <Label>Account Type</Label>
               <div className="p-3 bg-gray-50 rounded-md">
                 <span className="text-sm capitalize">
-                  {user.user_type.replace('_', ' ')}
+                  {user.user_type?.replace('_', ' ') || 'Standard'}
                 </span>
               </div>
             </div>
@@ -246,7 +246,7 @@ export function ProfileManagement() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {user.roles.map((role) => (
+            {user.roles?.map((role) => (
               <div key={role.id} className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
                   <h4 className="font-medium">{role.display_name}</h4>

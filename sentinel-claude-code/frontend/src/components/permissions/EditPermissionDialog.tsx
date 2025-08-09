@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
+import { Permission } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -23,17 +24,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
 
-interface CreatePermissionDialogProps {
+interface EditPermissionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
+  permission: Permission;
+  onSuccess: () => void;
 }
 
-interface CreatePermissionForm {
+interface EditPermissionForm {
   name: string;
   resource_type: string;
   resource_id: string;
@@ -41,6 +44,7 @@ interface CreatePermissionForm {
   actions: string[];
   conditions: string;
   field_permissions: string;
+  is_active: boolean;
 }
 
 const RESOURCE_TYPES = [
@@ -63,17 +67,21 @@ const AVAILABLE_ACTIONS = [
   { value: 'reject', label: 'Reject', color: 'bg-rose-100 text-rose-700' },
 ];
 
-export function CreatePermissionDialog({ open, onOpenChange, onSuccess }: CreatePermissionDialogProps) {
-  const [form, setForm] = useState<CreatePermissionForm>({
-    name: '',
-    resource_type: '',
-    resource_id: '',
-    resource_path: '',
-    actions: [],
-    conditions: '{}',
-    field_permissions: '{}',
+export function EditPermissionDialog({ open, onOpenChange, permission, onSuccess }: EditPermissionDialogProps) {
+  const [form, setForm] = useState<EditPermissionForm>({
+    name: permission.name,
+    resource_type: permission.resource_type,
+    resource_id: permission.resource_id || '',
+    resource_path: permission.resource_path || '',
+    actions: permission.actions,
+    conditions: JSON.stringify(permission.conditions || {}, null, 2),
+    field_permissions: JSON.stringify(permission.field_permissions || {}, null, 2),
+    is_active: permission.is_active,
   });
-  const [resourceTarget, setResourceTarget] = useState<'id' | 'path' | 'global'>('global');
+
+  const [resourceTarget, setResourceTarget] = useState<'id' | 'path' | 'global'>(
+    permission.resource_id ? 'id' : permission.resource_path ? 'path' : 'global'
+  );
 
   // Fetch resources for dropdown
   const { data: resourcesResponse } = useQuery({
@@ -85,38 +93,42 @@ export function CreatePermissionDialog({ open, onOpenChange, onSuccess }: Create
     enabled: resourceTarget === 'id' && !!form.resource_type,
   });
 
-  const createPermissionMutation = useMutation({
-    mutationFn: (permissionData: any) => apiClient.permissions.create(permissionData),
+  // Reset form when permission changes
+  useEffect(() => {
+    setForm({
+      name: permission.name,
+      resource_type: permission.resource_type,
+      resource_id: permission.resource_id || '',
+      resource_path: permission.resource_path || '',
+      actions: permission.actions,
+      conditions: JSON.stringify(permission.conditions || {}, null, 2),
+      field_permissions: JSON.stringify(permission.field_permissions || {}, null, 2),
+      is_active: permission.is_active,
+    });
+    setResourceTarget(
+      permission.resource_id ? 'id' : permission.resource_path ? 'path' : 'global'
+    );
+  }, [permission]);
+
+  const updatePermissionMutation = useMutation({
+    mutationFn: (permissionData: any) => 
+      apiClient.permissions.update(permission.id, permissionData),
     onSuccess: () => {
       toast({
         title: 'Success',
-        description: 'Permission created successfully.',
+        description: 'Permission updated successfully.',
       });
-      if (onSuccess) onSuccess();
-      handleClose();
+      onSuccess();
+      onOpenChange(false);
     },
     onError: (error: any) => {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to create permission.',
+        description: error.message || 'Failed to update permission.',
         variant: 'destructive',
       });
     },
   });
-
-  const handleClose = () => {
-    setForm({
-      name: '',
-      resource_type: '',
-      resource_id: '',
-      resource_path: '',
-      actions: [],
-      conditions: '{}',
-      field_permissions: '{}',
-    });
-    setResourceTarget('global');
-    onOpenChange(false);
-  };
 
   const handleActionChange = (action: string, checked: boolean) => {
     if (checked) {
@@ -164,28 +176,44 @@ export function CreatePermissionDialog({ open, onOpenChange, onSuccess }: Create
         actions: form.actions,
         conditions: parsedConditions,
         field_permissions: parsedFieldPermissions,
-        is_active: true,
+        is_active: form.is_active,
       };
 
-      await createPermissionMutation.mutateAsync(submitData);
+      await updatePermissionMutation.mutateAsync(submitData);
     } catch (error) {
       // Error handled by mutation
     }
   };
 
   const resources = resourcesResponse?.data?.resources || [];
+  const resourceTypeInfo = RESOURCE_TYPES.find(rt => rt.value === form.resource_type);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Permission</DialogTitle>
+          <DialogTitle>Edit Permission</DialogTitle>
           <DialogDescription>
-            Define a new permission for resources and actions.
+            Update the permission details and configuration.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Permission Info */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{resourceTypeInfo?.emoji}</span>
+              <div>
+                <h4 className="font-medium text-gray-900">Permission Information</h4>
+                <div className="text-sm text-gray-600 space-y-1 mt-1">
+                  <div><strong>ID:</strong> {permission.id}</div>
+                  <div><strong>Created:</strong> {permission.created_at ? new Date(permission.created_at).toLocaleString() : 'N/A'}</div>
+                  <div><strong>Updated:</strong> {permission.updated_at ? new Date(permission.updated_at).toLocaleString() : 'N/A'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Basic Details */}
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -220,6 +248,21 @@ export function CreatePermissionDialog({ open, onOpenChange, onSuccess }: Create
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="is_active"
+                checked={form.is_active}
+                onCheckedChange={(checked) => setForm({ ...form, is_active: checked })}
+              />
+              <Label htmlFor="is_active">Active</Label>
+              <div className="text-sm text-gray-500">
+                {form.is_active 
+                  ? 'Permission is active and enforced' 
+                  : 'Permission is inactive and not enforced'
+                }
               </div>
             </div>
           </div>
@@ -391,15 +434,15 @@ export function CreatePermissionDialog({ open, onOpenChange, onSuccess }: Create
             <Button
               type="button"
               variant="outline"
-              onClick={handleClose}
+              onClick={() => onOpenChange(false)}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={createPermissionMutation.isPending || !form.name || !form.resource_type || form.actions.length === 0}
+              disabled={updatePermissionMutation.isPending || !form.name || !form.resource_type || form.actions.length === 0}
             >
-              {createPermissionMutation.isPending ? 'Creating...' : 'Create Permission'}
+              {updatePermissionMutation.isPending ? 'Updating...' : 'Update Permission'}
             </Button>
           </DialogFooter>
         </form>
