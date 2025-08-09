@@ -40,7 +40,7 @@ CREATE TABLE sentinel.tenants (
     type sentinel.tenant_type NOT NULL DEFAULT 'root',
     parent_tenant_id UUID REFERENCES sentinel.tenants(id) ON DELETE CASCADE,
     isolation_mode sentinel.isolation_mode NOT NULL DEFAULT 'shared',
-    settings JSONB DEFAULT '{}',
+    settings JSONB DEFAULT '{}', -- Tenant configuration including terminology mapping
     features TEXT[] DEFAULT '{}', -- Enabled features for this tenant
     tenant_metadata JSONB DEFAULT '{}',
     is_active BOOLEAN DEFAULT true,
@@ -940,7 +940,49 @@ VALUES (
 -- =====================================================
 
 COMMENT ON SCHEMA sentinel IS 'Contains all tables, types, and functions for the Sentinel Access Platform.';
-COMMENT ON TABLE sentinel.tenants IS 'Multi-tenant organizations with support for sub-tenants';
+COMMENT ON TABLE sentinel.tenants IS 'Multi-tenant organizations with support for sub-tenants and industry-specific terminology mapping';
+
+-- =====================================================
+-- TERMINOLOGY MAPPING IMPLEMENTATION NOTES
+-- =====================================================
+/*
+INDUSTRY TERMINOLOGY MAPPING:
+The tenant.settings JSONB field stores terminology configuration to enable 
+industry-specific UI labels without database schema changes.
+
+Example settings structure:
+{
+  "terminology_config": {
+    "tenant": "Maritime Authority",
+    "sub_tenant": "Port Organization", 
+    "user": "Maritime Stakeholder",
+    "role": "Stakeholder Type",
+    "permission": "Service Clearance",
+    "create_tenant": "Register Maritime Organization",
+    "user_management": "Stakeholder Management"
+  },
+  "terminology_metadata": {
+    "is_inherited": true,
+    "inherited_from": "parent_tenant_id",
+    "last_updated": "2025-08-09T10:00:00Z",
+    "template_applied": "maritime_v1"
+  }
+}
+
+INHERITANCE LOGIC:
+- Child tenants automatically inherit parent terminology
+- Children can override specific terms while inheriting others
+- Terminology resolves up the hierarchy until found or defaults used
+
+API IMPACT:
+- NO BREAKING CHANGES: All existing APIs work unchanged
+- NEW ENDPOINTS: GET/PUT /tenants/{id}/terminology (additive only)
+- ENHANCED ENDPOINTS: PATCH /tenants/{id} accepts terminology in settings
+
+IMPLEMENTATION DATE: 2025-08-09
+REASON: Enable Sentinel to serve multiple industries (Maritime, Healthcare, 
+Finance) with domain-specific terminology while maintaining platform neutrality
+*/
 COMMENT ON TABLE sentinel.users IS 'Users and service accounts with tenant isolation';
 COMMENT ON TABLE sentinel.roles IS 'Hierarchical roles with inheritance support';
 COMMENT ON TABLE sentinel.groups IS 'User groups for bulk permission assignment';

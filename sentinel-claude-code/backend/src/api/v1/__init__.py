@@ -11,6 +11,7 @@ from src.api.v1.permissions import router as permissions_router
 from src.api.v1.resources import router as resources_router
 from src.api.v1.field_definitions import router as field_definitions_router
 from src.api.v1.navigation import router as navigation_router
+from src.api.v1.terminology import router as terminology_router
 
 api_router = APIRouter(prefix="/api/v1")
 
@@ -19,6 +20,7 @@ api_router.include_router(auth_router)
 api_router.include_router(password_reset_router)
 api_router.include_router(avatars_router)
 api_router.include_router(tenants_router)
+api_router.include_router(terminology_router)
 api_router.include_router(users_router)
 api_router.include_router(service_accounts_router)
 api_router.include_router(roles_router)
