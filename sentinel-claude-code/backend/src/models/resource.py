@@ -48,7 +48,7 @@ class Resource(BaseModel):
         index=True
     )
     type = Column(
-        ENUM(ResourceType, name='resource_type', schema='sentinel'), 
+        ENUM(ResourceType, name='resource_type', schema='sentinel', values_callable=lambda x: [e.value for e in x]), 
         nullable=False,
         index=True
     )

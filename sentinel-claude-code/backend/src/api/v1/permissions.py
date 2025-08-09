@@ -66,8 +66,13 @@ async def list_permissions(
     """
     try:
         service = PermissionService(db)
+        
+        # Check if user has global permission access
+        has_global_access = hasattr(current_user, 'scopes') and 'permission:global' in current_user.scopes
+        tenant_id = None if has_global_access else current_user.tenant_id
+        
         return await service.list_permissions(
-            tenant_id=current_user.tenant_id,
+            tenant_id=tenant_id,
             resource_type=resource_type,
             is_active=is_active,
             search=search,

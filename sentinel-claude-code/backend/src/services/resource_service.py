@@ -121,13 +121,19 @@ class ResourceService:
 
     async def list_resources(
         self, 
-        tenant_id: UUID_T,
+        tenant_id: Optional[UUID_T],
         query: ResourceQuery
     ) -> ResourceListResponse:
         """List resources with filtering and pagination."""
         
         # Build base query
-        stmt = select(Resource).where(Resource.tenant_id == tenant_id)
+        conditions = []
+        if tenant_id is not None:
+            conditions.append(Resource.tenant_id == tenant_id)
+        
+        stmt = select(Resource)
+        if conditions:
+            stmt = stmt.where(and_(*conditions))
 
         # Apply filters
         if query.type:
@@ -318,26 +324,27 @@ class ResourceService:
 
     async def get_resource_tree(
         self, 
-        tenant_id: UUID_T,
+        tenant_id: Optional[UUID_T],
         root_id: Optional[UUID_T] = None,
         max_depth: Optional[int] = None
     ) -> ResourceTreeResponse:
         """Get hierarchical resource tree."""
         
         # Build query for tree nodes
-        stmt = select(Resource).where(
-            and_(
-                Resource.tenant_id == tenant_id,
-                Resource.is_active == True
-            )
-        )
+        conditions = [Resource.is_active == True]
+        if tenant_id is not None:
+            conditions.append(Resource.tenant_id == tenant_id)
+            
+        stmt = select(Resource).where(and_(*conditions))
 
         if root_id:
             # Get subtree from specific root
+            root_conditions = [Resource.id == root_id]
+            if tenant_id is not None:
+                root_conditions.append(Resource.tenant_id == tenant_id)
+                
             root_result = await self.db.execute(
-                select(Resource).where(
-                    and_(Resource.id == root_id, Resource.tenant_id == tenant_id)
-                )
+                select(Resource).where(and_(*root_conditions))
             )
             root_resource = root_result.scalar_one_or_none()
             if not root_resource:
@@ -410,44 +417,76 @@ class ResourceService:
             permissions=permissions_data
         )
 
-    async def get_resource_statistics(self, tenant_id: UUID_T) -> ResourceStatistics:
+    async def get_resource_statistics(self, tenant_id: Optional[UUID_T]) -> ResourceStatistics:
         """Get resource statistics for a tenant."""
         
         # Total resources
-        total_result = await self.db.execute(
-            select(func.count(Resource.id)).where(Resource.tenant_id == tenant_id)
-        )
+        conditions = []
+        if tenant_id is not None:
+            conditions.append(Resource.tenant_id == tenant_id)
+        
+        if conditions:
+            total_result = await self.db.execute(
+                select(func.count(Resource.id)).where(and_(*conditions))
+            )
+        else:
+            total_result = await self.db.execute(
+                select(func.count(Resource.id))
+            )
         total = total_result.scalar()
 
         # Active/inactive counts
+        active_conditions = [Resource.is_active == True]
+        if tenant_id is not None:
+            active_conditions.append(Resource.tenant_id == tenant_id)
+        
         active_result = await self.db.execute(
-            select(func.count(Resource.id)).where(
-                and_(Resource.tenant_id == tenant_id, Resource.is_active == True)
-            )
+            select(func.count(Resource.id)).where(and_(*active_conditions))
         )
         active = active_result.scalar()
 
         # By type
-        by_type_result = await self.db.execute(
-            select(Resource.type, func.count(Resource.id))
-            .where(Resource.tenant_id == tenant_id)
-            .group_by(Resource.type)
-        )
+        by_type_conditions = []
+        if tenant_id is not None:
+            by_type_conditions.append(Resource.tenant_id == tenant_id)
+        
+        if by_type_conditions:
+            by_type_result = await self.db.execute(
+                select(Resource.type, func.count(Resource.id))
+                .where(and_(*by_type_conditions))
+                .group_by(Resource.type)
+            )
+        else:
+            by_type_result = await self.db.execute(
+                select(Resource.type, func.count(Resource.id))
+                .group_by(Resource.type)
+            )
         by_type = {str(row[0]): row[1] for row in by_type_result.fetchall()}
 
         # Max depth
-        max_depth_result = await self.db.execute(
-            select(func.max(func.array_length(func.string_to_array(Resource.path, '/'), 1)))
-            .where(Resource.tenant_id == tenant_id)
-        )
+        depth_conditions = []
+        if tenant_id is not None:
+            depth_conditions.append(Resource.tenant_id == tenant_id)
+        
+        if depth_conditions:
+            max_depth_result = await self.db.execute(
+                select(func.max(func.array_length(func.string_to_array(Resource.path, '/'), 1)))
+                .where(and_(*depth_conditions))
+            )
+        else:
+            max_depth_result = await self.db.execute(
+                select(func.max(func.array_length(func.string_to_array(Resource.path, '/'), 1)))
+            )
         max_depth = max_depth_result.scalar() or 0
         max_depth = max(0, max_depth - 2)  # Adjust for leading/trailing slashes
 
         # Root resources
+        root_conditions = [Resource.parent_id.is_(None)]
+        if tenant_id is not None:
+            root_conditions.append(Resource.tenant_id == tenant_id)
+        
         root_result = await self.db.execute(
-            select(func.count(Resource.id)).where(
-                and_(Resource.tenant_id == tenant_id, Resource.parent_id.is_(None))
-            )
+            select(func.count(Resource.id)).where(and_(*root_conditions))
         )
         root_count = root_result.scalar()
 

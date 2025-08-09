@@ -85,14 +85,21 @@ class PermissionService:
 
     async def list_permissions(
         self,
-        tenant_id: UUID_T,
+        tenant_id: Optional[UUID_T],
         resource_type: Optional[str] = None,
         is_active: Optional[bool] = None,
         search: Optional[str] = None,
         skip: int = 0,
         limit: int = 50,
     ) -> PermissionListResponse:
-        stmt = select(Permission).where(Permission.tenant_id == tenant_id)
+        # Build base query conditions
+        conditions = []
+        if tenant_id is not None:
+            conditions.append(Permission.tenant_id == tenant_id)
+        
+        stmt = select(Permission)
+        if conditions:
+            stmt = stmt.where(and_(*conditions))
         count_stmt = select(literal(0))  # placeholder if later need exact count
 
         if resource_type is not None:

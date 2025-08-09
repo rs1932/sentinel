@@ -102,7 +102,7 @@ export function PermissionsManagement() {
   });
 
   const permissions: Permission[] = permissionsResponse?.items || permissionsResponse || [];
-  const resources = resourcesResponse?.data?.resources || [];
+  const resources = resourcesResponse?.items || [];
 
   // Create resource lookup map
   const resourceMap = resources.reduce((acc: any, resource: any) => {

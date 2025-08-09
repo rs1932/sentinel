@@ -191,7 +191,7 @@ function StatisticsCards({ stats }: { stats: ResourceStatistics }) {
           <TreePine className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats?.max_depth || 0}</div>
+          <div className="text-2xl font-bold">{stats?.max_hierarchy_depth || 0}</div>
           <p className="text-xs text-muted-foreground">
             hierarchy levels
           </p>
@@ -204,7 +204,7 @@ function StatisticsCards({ stats }: { stats: ResourceStatistics }) {
           <Shield className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats?.total_permissions || 0}</div>
+          <div className="text-2xl font-bold">0</div>
           <p className="text-xs text-muted-foreground">
             total permissions
           </p>
@@ -218,7 +218,7 @@ function StatisticsCards({ stats }: { stats: ResourceStatistics }) {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            {Object.keys(stats?.resources_by_type || {}).length}
+            {Object.keys(stats?.by_type || {}).length}
           </div>
           <p className="text-xs text-muted-foreground">
             different types
@@ -309,7 +309,7 @@ export function ResourcesManagement() {
       </div>
 
       {/* Statistics */}
-      {statistics?.data && <StatisticsCards stats={statistics.data} />}
+      {statistics && <StatisticsCards stats={statistics} />}
 
       {/* Search and Filters */}
       <Card>
@@ -340,9 +340,13 @@ export function ResourcesManagement() {
             </TabsList>
             
             <TabsContent value="tree" className="space-y-4">
-              {resourceTree && resourceTree.data ? (
+              {treeLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : resourceTree && resourceTree.tree ? (
                 <div className="space-y-2">
-                  {resourceTree.data.resources.map((resource: ResourceHierarchy) => (
+                  {(Array.isArray(resourceTree.tree) ? resourceTree.tree : [resourceTree.tree]).map((resource: ResourceHierarchy) => (
                     <ResourceTreeNode
                       key={resource.id}
                       resource={resource}
@@ -352,7 +356,7 @@ export function ResourcesManagement() {
                       onCreateChild={handleCreateChild}
                     />
                   ))}
-                  {resourceTree.data.resources.length === 0 && (
+                  {(Array.isArray(resourceTree.tree) ? resourceTree.tree : [resourceTree.tree]).length === 0 && (
                     <div className="text-center py-12 text-gray-500">
                       <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                       <h3 className="text-lg font-medium mb-2">No resources found</h3>
@@ -365,59 +369,89 @@ export function ResourcesManagement() {
                   )}
                 </div>
               ) : (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div className="text-center py-12 text-gray-500">
+                  <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium mb-2">Unable to load resources</h3>
+                  <p className="mb-4">There was an error loading the resource tree.</p>
+                  <Button onClick={() => window.location.reload()}>
+                    Retry
+                  </Button>
                 </div>
               )}
             </TabsContent>
 
             <TabsContent value="list" className="space-y-4">
-              {searchTerm && resourcesList ? (
-                <div className="grid gap-4">
-                  {resourcesList.data.resources.map((resource: Resource) => (
-                    <Card key={resource.id}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className="text-lg">
-                              {resource.type === 'product_family' ? '📦' :
-                               resource.type === 'app' ? '🎯' :
-                               resource.type === 'capability' ? '⚡' :
-                               resource.type === 'service' ? '🔧' :
-                               resource.type === 'entity' ? '📋' :
-                               resource.type === 'page' ? '📄' :
-                               resource.type === 'api' ? '🔌' : '📂'}
-                            </span>
-                            <div>
-                              <h4 className="font-medium">{resource.name}</h4>
-                              <p className="text-sm text-gray-500">{resource.code}</p>
+              {searchTerm ? (
+                listLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : resourcesList && resourcesList.items ? (
+                  <div className="grid gap-4">
+                    {resourcesList.items.map((resource: Resource) => (
+                      <Card key={resource.id}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-lg">
+                                {resource.type === 'product_family' ? '📦' :
+                                 resource.type === 'app' ? '🎯' :
+                                 resource.type === 'capability' ? '⚡' :
+                                 resource.type === 'service' ? '🔧' :
+                                 resource.type === 'entity' ? '📋' :
+                                 resource.type === 'page' ? '📄' :
+                                 resource.type === 'api' ? '🔌' : '📂'}
+                              </span>
+                              <div>
+                                <h4 className="font-medium">{resource.name}</h4>
+                                <p className="text-sm text-gray-500">{resource.code}</p>
+                                {resource.description && (
+                                  <p className="text-sm text-gray-600 mt-1">{resource.description}</p>
+                                )}
+                              </div>
+                              <Badge variant="outline">
+                                {resource.type.replace('_', ' ')}
+                              </Badge>
+                              {!resource.is_active && (
+                                <Badge variant="secondary">Inactive</Badge>
+                              )}
                             </div>
-                            <Badge variant="outline">
-                              {resource.type.replace('_', ' ')}
-                            </Badge>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleEdit(resource)}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDelete(resource)}>
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleEdit(resource)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDelete(resource)}>
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    {resourcesList.items.length === 0 && (
+                      <div className="text-center py-12 text-gray-500">
+                        <Search className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                        <h3 className="text-lg font-medium mb-2">No resources found</h3>
+                        <p>No resources match your search term "{searchTerm}"</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    <Search className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium mb-2">Search failed</h3>
+                    <p>Unable to search for resources. Please try again.</p>
+                  </div>
+                )
               ) : (
                 <div className="text-center py-12 text-gray-500">
                   <Search className="mx-auto h-12 w-12 text-gray-400 mb-4" />

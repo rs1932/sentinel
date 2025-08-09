@@ -106,8 +106,13 @@ async def list_resources(
     )
     
     service = ResourceService(db)
+    
+    # Check if user has global resource access
+    has_global_access = hasattr(current_user, 'scopes') and 'resource:global' in current_user.scopes
+    tenant_id = None if has_global_access else current_user.tenant_id
+    
     return await service.list_resources(
-        tenant_id=current_user.tenant_id,
+        tenant_id=tenant_id,
         query=query
     )
 
@@ -128,8 +133,13 @@ async def get_resource_tree(
     """Get resource tree/hierarchy."""
     try:
         service = ResourceService(db)
+        
+        # Check if user has global resource access
+        has_global_access = hasattr(current_user, 'scopes') and 'resource:global' in current_user.scopes
+        tenant_id = None if has_global_access else current_user.tenant_id
+        
         return await service.get_resource_tree(
-            tenant_id=current_user.tenant_id,
+            tenant_id=tenant_id,
             root_id=root_id,
             max_depth=max_depth
         )
@@ -150,7 +160,12 @@ async def get_resource_statistics(
 ) -> ResourceStatistics:
     """Get resource statistics."""
     service = ResourceService(db)
-    return await service.get_resource_statistics(current_user.tenant_id)
+    
+    # Check if user has global resource access
+    has_global_access = hasattr(current_user, 'scopes') and 'resource:global' in current_user.scopes
+    tenant_id = None if has_global_access else current_user.tenant_id
+    
+    return await service.get_resource_statistics(tenant_id)
 
 
 @router.get(
