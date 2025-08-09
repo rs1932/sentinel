@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth';
+import { useT } from '@/components/terminology';
 import { apiClient } from '@/lib/api';
 import { Tenant, TenantDetail, FEATURE_LABELS } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,7 +31,8 @@ import {
   Power,
   PowerOff,
   Trash2,
-  GitBranch
+  GitBranch,
+  Languages
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -43,6 +45,7 @@ import {
 import { CreateTenantDialog } from './CreateTenantDialog';
 import { EditTenantDialog } from './EditTenantDialog';
 import { TenantDetailDialog } from './TenantDetailDialog';
+import TerminologyManagementDialog from './TerminologyManagementDialog';
 import { useToast } from '@/hooks/use-toast';
 
 export function TenantManagement() {
@@ -53,9 +56,11 @@ export function TenantManagement() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showTerminologyDialog, setShowTerminologyDialog] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
 
   const { userRole } = useAuthStore();
+  const t = useT(); // Terminology translation function
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -97,14 +102,14 @@ export function TenantManagement() {
     onSuccess: () => {
       toast({
         title: 'Success',
-        description: 'Tenant activated successfully',
+        description: `${t('tenant')} activated successfully`,
       });
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
     },
     onError: (error: any) => {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to activate tenant',
+        description: error.message || `Failed to activate ${t('tenant').toLowerCase()}`,
         variant: 'destructive',
       });
     },
@@ -115,14 +120,14 @@ export function TenantManagement() {
     onSuccess: () => {
       toast({
         title: 'Success',
-        description: 'Tenant deactivated successfully',
+        description: `${t('tenant')} deactivated successfully`,
       });
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
     },
     onError: (error: any) => {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to deactivate tenant',
+        description: error.message || `Failed to deactivate ${t('tenant').toLowerCase()}`,
         variant: 'destructive',
       });
     },
@@ -133,14 +138,14 @@ export function TenantManagement() {
     onSuccess: () => {
       toast({
         title: 'Success',
-        description: 'Tenant deleted successfully',
+        description: `${t('tenant')} deleted successfully`,
       });
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
     },
     onError: (error: any) => {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to delete tenant',
+        description: error.message || `Failed to delete ${t('tenant').toLowerCase()}`,
         variant: 'destructive',
       });
     },
@@ -164,6 +169,9 @@ export function TenantManagement() {
       case 'edit':
         setShowEditDialog(true);
         break;
+      case 'terminology':
+        setShowTerminologyDialog(true);
+        break;
       case 'activate':
         activateMutation.mutate(tenant.id);
         break;
@@ -171,7 +179,7 @@ export function TenantManagement() {
         deactivateMutation.mutate(tenant.id);
         break;
       case 'delete':
-        if (confirm('Are you sure you want to delete this tenant? This action cannot be undone.')) {
+        if (confirm(`Are you sure you want to delete this ${t('tenant').toLowerCase()}? This action cannot be undone.`)) {
           deleteMutation.mutate(tenant.id);
         }
         break;
@@ -205,7 +213,7 @@ export function TenantManagement() {
               <Building2 className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">Access Denied</h3>
               <p className="mt-1 text-sm text-gray-500">
-                You don't have permission to view tenant information.
+                You don't have permission to view {t('tenant').toLowerCase()} information.
               </p>
             </div>
           </CardContent>
@@ -219,7 +227,7 @@ export function TenantManagement() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Tenant Management</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('tenant_management')}</h1>
           <p className="text-gray-600">
             Manage organizations and their configurations
           </p>
@@ -230,7 +238,7 @@ export function TenantManagement() {
             onClick={() => setShowCreateDialog(true)}
           >
             <Plus className="mr-2 h-4 w-4" />
-            Create Tenant
+{t('create_tenant')}
           </Button>
         )}
       </div>
@@ -240,16 +248,16 @@ export function TenantManagement() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Tenants</CardTitle>
+              <CardTitle>{t('tenants')}</CardTitle>
               <CardDescription>
-                {isLoading ? 'Loading...' : `${tenantsResponse?.total || 0} tenant${(tenantsResponse?.total || 0) !== 1 ? 's' : ''} found`}
+                {isLoading ? 'Loading...' : `${tenantsResponse?.total || 0} ${(tenantsResponse?.total || 0) !== 1 ? t('tenants').toLowerCase() : t('tenant').toLowerCase()} found`}
               </CardDescription>
             </div>
             <div className="flex items-center space-x-2">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Search tenants..."
+                  placeholder={`Search ${t('tenants').toLowerCase()}...`}
                   className="pl-10 w-64"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -262,7 +270,7 @@ export function TenantManagement() {
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="root">Root</SelectItem>
-                  <SelectItem value="sub_tenant">Sub-Tenant</SelectItem>
+                  <SelectItem value="sub_tenant">{t('sub_tenant')}</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={statusFilter.toString()} onValueChange={(value) => setStatusFilter(value === 'all' ? 'all' : value === 'true')}>
@@ -285,7 +293,7 @@ export function TenantManagement() {
             </div>
           ) : error ? (
             <div className="text-center py-12">
-              <p className="text-red-600">Failed to load tenants: {(error as any)?.message}</p>
+              <p className="text-red-600">Failed to load {t('tenants').toLowerCase()}: {(error as any)?.message}</p>
               <Button variant="outline" className="mt-2" onClick={() => refetch()}>
                 Try Again
               </Button>
@@ -297,10 +305,10 @@ export function TenantManagement() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[50px]"></TableHead>
-                      <TableHead>Tenant</TableHead>
+                      <TableHead>{t('tenant')}</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Isolation</TableHead>
-                      <TableHead>Users</TableHead>
+                      <TableHead>{t('users')}</TableHead>
                       <TableHead>Features</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Created</TableHead>
@@ -330,7 +338,7 @@ export function TenantManagement() {
                             variant="secondary"
                             className={getTenantTypeColor(tenant.type)}
                           >
-                            {tenant.type === 'root' ? 'Root' : 'Sub-Tenant'}
+                            {tenant.type === 'root' ? 'Root' : t('sub_tenant')}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -396,6 +404,10 @@ export function TenantManagement() {
                                   <DropdownMenuItem onClick={() => handleTenantAction('edit', tenant)}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleTenantAction('terminology', tenant)}>
+                                    <Languages className="mr-2 h-4 w-4" />
+                                    Terminology
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   {tenant.is_active ? (
@@ -465,7 +477,7 @@ export function TenantManagement() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600">
-                Total Tenants
+                Total {t('tenants')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -477,7 +489,7 @@ export function TenantManagement() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600">
-                Root Tenants
+                Root {t('tenants')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -491,7 +503,7 @@ export function TenantManagement() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600">
-                Sub-Tenants
+                {t('sub_tenants')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -505,7 +517,7 @@ export function TenantManagement() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600">
-                Active Tenants
+                Active {t('tenants')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -543,6 +555,17 @@ export function TenantManagement() {
           tenantId={selectedTenant.id}
           onClose={() => {
             setShowDetailDialog(false);
+            setSelectedTenant(null);
+          }}
+        />
+      )}
+      
+      {showTerminologyDialog && selectedTenant && (
+        <TerminologyManagementDialog
+          isOpen={showTerminologyDialog}
+          tenant={selectedTenant}
+          onClose={() => {
+            setShowTerminologyDialog(false);
             setSelectedTenant(null);
           }}
         />

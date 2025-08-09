@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
 import { NAVIGATION_MENUS } from '@/constants/navigation';
+import { useT } from '@/components/terminology';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
@@ -19,6 +20,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { userRole } = useAuthStore();
+  const t = useT(); // Terminology translation function
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [isCollapsed, setIsCollapsed] = useState(() => {
     // Initialize from localStorage if available
@@ -38,8 +40,28 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   }, [isCollapsed]);
 
-  // Get navigation items based on user role
+  // Get navigation items based on user role with terminology translation
   const navigationItems = userRole ? NAVIGATION_MENUS[userRole] || [] : [];
+  
+  // Helper function to get translated label for menu items
+  const getTranslatedLabel = (itemId: string, originalLabel: string): string => {
+    // Map menu item IDs to terminology keys
+    const terminologyMap: Record<string, string> = {
+      'dashboard': 'dashboard',
+      'tenants': 'tenants',
+      'users': 'users', 
+      'groups': 'groups',
+      'roles': 'roles',
+      'permissions': 'permissions',
+      'resources': 'resources',
+      'settings': 'settings',
+      'profile': 'profile',
+      'home': 'home',
+    };
+    
+    const terminologyKey = terminologyMap[itemId];
+    return terminologyKey ? t(terminologyKey) : originalLabel;
+  };
 
   const toggleExpanded = (itemId: string) => {
     setExpandedItems(prev =>
@@ -58,7 +80,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Mobile header */}
       {isMobile && (
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">Navigation</h2>
+          <h2 className="text-lg font-semibold">{t('navigation') || 'Navigation'}</h2>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
@@ -68,7 +90,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Desktop minimize button */}
       {!isMobile && (
         <div className="flex items-center justify-between p-4 border-b">
-          {!isCollapsed && <h2 className="text-lg font-semibold">Navigation</h2>}
+          {!isCollapsed && <h2 className="text-lg font-semibold">{t('navigation') || 'Navigation'}</h2>}
           <Button 
             variant="ghost" 
             size="sm" 
@@ -107,7 +129,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <Icon className={cn("h-4 w-4", !isCollapsed && "mr-3")} />
                   {!isCollapsed && (
                     <>
-                      <span className="flex-1">{item.label}</span>
+                      <span className="flex-1">{getTranslatedLabel(item.id, item.label)}</span>
                       <ChevronRight
                         className={cn(
                           'h-4 w-4 transition-transform',
@@ -142,10 +164,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
                         : 'text-gray-700 hover:bg-gray-100'
                     )}
-                    title={isCollapsed ? item.label : undefined}
+                    title={isCollapsed ? getTranslatedLabel(item.id, item.label) : undefined}
                   >
                     <Icon className={cn("h-4 w-4", !isCollapsed && "mr-3")} />
-                    {!isCollapsed && item.label}
+                    {!isCollapsed && getTranslatedLabel(item.id, item.label)}
                   </Button>
                 </Link>
               )}
@@ -178,7 +200,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                           )}
                         >
                           <SubIcon className="mr-3 h-3 w-3" />
-                          {subItem.label}
+                          {getTranslatedLabel(subItem.id, subItem.label)}
                         </Button>
                       </Link>
                     );

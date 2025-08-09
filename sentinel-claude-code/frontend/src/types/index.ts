@@ -147,5 +147,32 @@ export interface ResourceStatistics {
   total_permissions: number;
 }
 
+// Terminology types
+export interface TerminologyConfig {
+  terminology: Record<string, string>;
+  is_inherited: boolean;
+  inherited_from?: string;
+  local_config: Record<string, string>;
+  last_updated?: string;
+  template_applied?: string;
+  tenant_id: string;
+  tenant_name: string;
+  tenant_code: string;
+}
+
+export interface UpdateTerminologyRequest {
+  terminology: Record<string, string>;
+  inherit_parent?: boolean;
+  apply_to_children?: boolean;
+  template_name?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface TerminologyValidation {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
 // Re-export tenant types
 export * from './tenant';

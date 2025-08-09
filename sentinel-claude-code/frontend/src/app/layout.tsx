@@ -3,6 +3,7 @@ import "./globals.css";
 import { QueryProvider } from "@/lib/providers/QueryProvider";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { MainLayout } from "@/components/layout";
+import { TerminologyWrapper } from "@/components/terminology";
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
@@ -20,9 +21,11 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <QueryProvider>
           <AuthGuard>
-            <MainLayout>
-              {children}
-            </MainLayout>
+            <TerminologyWrapper>
+              <MainLayout>
+                {children}
+              </MainLayout>
+            </TerminologyWrapper>
           </AuthGuard>
           <Toaster />
         </QueryProvider>
