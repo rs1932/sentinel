@@ -88,12 +88,18 @@ class RBACService:
             
         except Exception as e:
             logger.error(f"Error resolving user scopes for {user.id}: {e}")
-            # Fallback to basic scopes to prevent access denial
-            return await self._get_fallback_scopes(user)
+            # SECURITY: Fail secure - deny all access if RBAC resolution fails
+            logger.warning(f"RBAC resolution failed for user {user.id}. Denying all access for security.")
+            return []  # Return empty scopes - no permissions
     
     async def _resolve_user_permissions(self, user: User) -> List[str]:
         """Resolve user permissions from roles and groups."""
         all_scopes = set()
+        
+        # 0. Check for superadmin attribute (legacy compatibility)
+        if user.attributes and user.attributes.get('role') == 'superadmin':
+            logger.info(f"User {user.id} has superadmin attribute, granting full access")
+            return self._get_superadmin_scopes()
         
         # 1. Get direct role assignments
         direct_roles = await self.get_user_direct_roles(user.id)
@@ -120,6 +126,22 @@ class RBACService:
         final_scopes = await self._resolve_permission_conflicts(list(all_scopes), resolved_roles)
         
         return final_scopes
+    
+    def _get_superadmin_scopes(self) -> List[str]:
+        """Return full superadmin scopes (copied from hardcoded logic)."""
+        return [
+            "user:profile",
+            "platform:admin",  # Global platform administration
+            "tenant:read", "tenant:write", "tenant:admin", "tenant:global",
+            "user:read", "user:write", "user:admin", "user:global",
+            "service_account:read", "service_account:write", "service_account:admin", "service_account:global",
+            "role:read", "role:write", "role:admin", "role:global",
+            "group:read", "group:write", "group:admin", "group:global",
+            "permission:read", "permission:write", "permission:admin", "permission:global",
+            "resource:read", "resource:write", "resource:admin", "resource:global",
+            "system:admin",  # System-level administration
+            "audit:read", "audit:write"  # Audit log access
+        ]
     
     async def get_user_direct_roles(self, user_id: UUID) -> List[Role]:
         """Get roles directly assigned to user."""
@@ -246,16 +268,18 @@ class RBACService:
         
         for permission in permissions:
             # Build scope strings from permission attributes
-            resource_type = permission.resource_type.value if permission.resource_type else "general"
+            # resource_type is already a string from the database, not an enum object
+            resource_type = permission.resource_type if permission.resource_type else "general"
             
             for action in permission.actions:
-                scope = f"{resource_type}:{action.value}"
+                # action is also already a string from the database
+                scope = f"{resource_type}:{action}"
                 scopes.append(scope)
             
             # Add resource-specific scopes if resource_id is set
             if permission.resource_id:
                 for action in permission.actions:
-                    resource_scope = f"{resource_type}:{action.value}:{permission.resource_id}"
+                    resource_scope = f"{resource_type}:{action}:{permission.resource_id}"
                     scopes.append(resource_scope)
         
         return scopes
@@ -278,34 +302,16 @@ class RBACService:
     
     async def _get_fallback_scopes(self, user: User) -> List[str]:
         """
-        Provide fallback scopes when dynamic resolution fails.
+        DEPRECATED: This method is a security vulnerability and should not be used.
         
-        This prevents complete access denial due to system issues.
+        Previously provided fallback scopes when dynamic resolution failed,
+        but this violates the principle of "fail secure". If RBAC resolution
+        fails, the system should deny access, not grant fallback permissions.
+        
+        SECURITY WARNING: Always return empty list (no permissions) on failure.
         """
-        logger.warning(f"Using fallback scopes for user {user.id}")
-        
-        # Basic read-only access for safety
-        fallback_scopes = [
-            "user:profile",
-            "tenant:read"
-        ]
-        
-        # Check if it's a service account or superadmin for enhanced fallback
-        platform_tenant_id = "00000000-0000-0000-0000-000000000000"
-        
-        if user.is_service_account:
-            fallback_scopes.extend([
-                "api:read", "api:write",
-                "user:read", "user:write"
-            ])
-        elif str(user.tenant_id) == platform_tenant_id:
-            fallback_scopes.extend([
-                "platform:admin",
-                "tenant:admin", "tenant:global",
-                "user:admin", "user:global"
-            ])
-        
-        return fallback_scopes
+        logger.error(f"SECURITY WARNING: _get_fallback_scopes called for user {user.id}. This method should not be used!")
+        return []  # Always deny access - fail secure
     
     async def invalidate_user_cache(self, user_id: UUID) -> None:
         """Invalidate cached permissions for a user."""

@@ -383,7 +383,7 @@ class AuthenticationService:
         await self.db.commit()
     
     async def _get_user_scopes(self, user: User) -> List[str]:
-        """Get user permissions/scopes using dynamic RBAC or fallback to hardcoded."""
+        """Get user permissions/scopes using dynamic RBAC - fail secure on error."""
         
         if USE_DYNAMIC_RBAC:
             try:
@@ -395,11 +395,12 @@ class AuthenticationService:
             
             except Exception as e:
                 logger.error(f"Dynamic RBAC failed for user {user.id}: {e}")
-                logger.warning("Falling back to hardcoded scopes")
-                # Fall through to hardcoded logic
+                # SECURITY: Fail secure - deny all access if RBAC resolution fails
+                logger.warning(f"RBAC failed for user {user.id}. Denying all access for security.")
+                return []  # Return empty scopes - no permissions
         
-        # Hardcoded fallback logic (original implementation)
-        logger.info(f"Using hardcoded scopes for user {user.id}")
+        # Hardcoded scopes only when dynamic RBAC is explicitly disabled
+        logger.info(f"Using hardcoded scopes for user {user.id} (dynamic RBAC disabled)")
         
         # Check if user is super admin (on PLATFORM tenant)
         platform_tenant_id = "00000000-0000-0000-0000-000000000000"
