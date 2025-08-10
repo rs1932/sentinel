@@ -265,8 +265,7 @@ class TestTokenBlacklistManager:
         self.jwt_manager = JWTManager()
         self.blacklist_manager = TokenBlacklistManager(self.jwt_manager)
     
-    @pytest.mark.asyncio
-    async def test_blacklist_token(self):
+    def test_blacklist_token(self):
         """Test blacklisting a token"""
         tokens = self.jwt_manager.generate_tokens(
             user_id=str(uuid4()),
@@ -275,19 +274,17 @@ class TestTokenBlacklistManager:
             email="test@example.com"
         )
         
-        jti = await self.blacklist_manager.blacklist_token(tokens["access_token"])
+        jti = self.blacklist_manager.blacklist_token(tokens["access_token"])
         
         assert jti is not None
         assert jti == tokens["access_jti"]
     
-    @pytest.mark.asyncio
-    async def test_blacklist_invalid_token(self):
+    def test_blacklist_invalid_token(self):
         """Test blacklisting invalid token"""
         with pytest.raises(ValueError, match="Cannot extract JTI"):
-            await self.blacklist_manager.blacklist_token("invalid_token")
+            self.blacklist_manager.blacklist_token("invalid_token")
     
-    @pytest.mark.asyncio
-    async def test_is_token_blacklisted(self):
+    def test_is_token_blacklisted(self):
         """Test checking if token is blacklisted"""
         tokens = self.jwt_manager.generate_tokens(
             user_id=str(uuid4()),
@@ -297,11 +294,11 @@ class TestTokenBlacklistManager:
         )
         
         # Token should not be blacklisted initially
-        is_blacklisted = await self.blacklist_manager.is_token_blacklisted(tokens["access_token"])
+        is_blacklisted = self.blacklist_manager.is_token_blacklisted(tokens["access_token"])
         assert is_blacklisted is False
         
         # Invalid tokens are considered blacklisted
-        is_blacklisted = await self.blacklist_manager.is_token_blacklisted("invalid_token")
+        is_blacklisted = self.blacklist_manager.is_token_blacklisted("invalid_token")
         assert is_blacklisted is True
 
 

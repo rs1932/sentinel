@@ -61,7 +61,8 @@ export function isTokenExpired(token: string): boolean {
     return true;
   }
   
-  return Date.now() >= payload.exp * 1000;
+  // Add a small buffer (30 seconds) to prevent edge cases
+  return Date.now() >= (payload.exp * 1000 - 30000);
 }
 
 /**

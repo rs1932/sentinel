@@ -3,7 +3,10 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { User, AuthTokens, UserRole } from '@/types';
 import { TOKEN_STORAGE_KEY, USER_STORAGE_KEY } from '@/constants';
 import { hasAdminAccess } from '@/lib/auth/adminCheck';
-import { getScopesFromToken } from '@/lib/jwt';
+import { getScopesFromToken, isTokenExpired as isJWTExpired } from '@/lib/jwt';
+
+// Session timeout: 30 minutes of inactivity
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
 interface AuthState {
   user: User | null;
@@ -13,6 +16,7 @@ interface AuthState {
   userRole: UserRole | null;
   tokenExpiresAt: number | null; // Unix timestamp
   hasAdminAccess: boolean; // Whether user has admin access to Sentinel
+  lastActivity: number | null; // Last activity timestamp for session timeout
 }
 
 interface AuthActions {
@@ -27,6 +31,8 @@ interface AuthActions {
   getTimeUntilExpiry: () => number;
   checkAdminAccess: () => boolean;
   getUserScopes: () => string[];
+  updateActivity: () => void;
+  isSessionExpired: () => boolean;
 }
 
 // Helper function to determine user role
@@ -81,6 +87,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       userRole: null,
       tokenExpiresAt: null,
       hasAdminAccess: false,
+      lastActivity: null,
 
       // Actions
       login: (user: User, tokens: AuthTokens) => {
@@ -97,6 +104,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           userRole,
           tokenExpiresAt: expiresAt,
           hasAdminAccess: adminAccess,
+          lastActivity: Date.now(),
         });
       },
 
@@ -109,8 +117,10 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           userRole: null,
           tokenExpiresAt: null,
           hasAdminAccess: false,
+          lastActivity: null,
         });
-        // Clear localStorage
+        // Clear sessionStorage and localStorage (for any legacy data)
+        sessionStorage.removeItem('auth-storage');
         localStorage.removeItem(TOKEN_STORAGE_KEY);
         localStorage.removeItem(USER_STORAGE_KEY);
       },
@@ -180,11 +190,18 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       },
 
       isTokenExpired: () => {
-        const { tokenExpiresAt } = get();
-        if (!tokenExpiresAt) return true;
+        const { tokens, tokenExpiresAt } = get();
         
-        // Check if token expires in the next 5 minutes (300,000 ms)
-        return Date.now() >= (tokenExpiresAt - 300000);
+        // First check if we have tokens
+        if (!tokens?.access_token) return true;
+        
+        // Use JWT expiration check for more accuracy
+        const jwtExpired = isJWTExpired(tokens.access_token);
+        
+        // Also check stored expiration as fallback
+        const storedExpired = tokenExpiresAt ? Date.now() >= (tokenExpiresAt - 300000) : true;
+        
+        return jwtExpired || storedExpired;
       },
 
       getTimeUntilExpiry: () => {
@@ -207,18 +224,50 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         if (!tokens?.access_token) return [];
         return getScopesFromToken(tokens.access_token);
       },
+
+      updateActivity: () => {
+        set({ lastActivity: Date.now() });
+      },
+
+      isSessionExpired: () => {
+        const { lastActivity } = get();
+        if (!lastActivity) return false; // No activity recorded yet
+        
+        return Date.now() - lastActivity > SESSION_TIMEOUT_MS;
+      },
     }),
-    {
-      name: 'auth-storage',
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        user: state.user,
-        tokens: state.tokens,
-        isAuthenticated: state.isAuthenticated,
-        userRole: state.userRole,
-        tokenExpiresAt: state.tokenExpiresAt,
-        hasAdminAccess: state.hasAdminAccess,
-      }),
-    }
-  )
+  {
+    name: 'auth-storage',
+    storage: createJSONStorage(() => localStorage), // Keep localStorage but add session timeout
+    partialize: (state) => ({
+      user: state.user,
+      tokens: state.tokens,
+      isAuthenticated: state.isAuthenticated,
+      userRole: state.userRole,
+      tokenExpiresAt: state.tokenExpiresAt,
+      hasAdminAccess: state.hasAdminAccess,
+      lastActivity: state.lastActivity,
+    }),
+    onRehydrateStorage: () => (state) => {
+      // Check if token or session is expired after rehydration
+      if (state && state.isAuthenticated && state.tokens?.access_token) {
+        // Check JWT expiration
+        if (isJWTExpired(state.tokens.access_token)) {
+          console.warn('Token expired on rehydration, logging out user');
+          state.logout();
+          return;
+        }
+        
+        // Check session expiration (30 minutes of inactivity)
+        if (state.isSessionExpired()) {
+          console.warn('Session expired due to inactivity, logging out user');
+          state.logout();
+          return;
+        }
+        
+        // Update activity on rehydration to prevent immediate timeout
+        state.updateActivity();
+      }
+    },
+  })
 );

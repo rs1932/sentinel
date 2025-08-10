@@ -14,7 +14,7 @@ interface AuthGuardProps {
 export function AuthGuard({ children }: AuthGuardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isHydrated, setIsHydrated] = useState(false);
-  const { isAuthenticated, user, hasAdminAccess, getUserScopes } = useAuthStore();
+  const { isAuthenticated, user, hasAdminAccess, getUserScopes, isTokenExpired, isSessionExpired, logout, updateActivity } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -47,6 +47,24 @@ export function AuthGuard({ children }: AuthGuardProps) {
         return;
       }
 
+      // Double-check token and session expiration as a security measure
+      if (isTokenExpired()) {
+        console.warn('Token expired during auth check, logging out user');
+        logout();
+        router.replace(ROUTES.LOGIN);
+        return;
+      }
+
+      if (isSessionExpired()) {
+        console.warn('Session expired due to inactivity, logging out user');
+        logout();
+        router.replace(ROUTES.LOGIN);
+        return;
+      }
+
+      // Update activity timestamp on route checks
+      updateActivity();
+
       // Check admin access for Sentinel UI
       // Sentinel is an RBAC/AUTH administrative system - only admin users should have access
       if (!hasAdminAccess) {
@@ -60,7 +78,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     };
 
     checkAuth();
-  }, [isAuthenticated, user, hasAdminAccess, pathname, router, isHydrated]);
+  }, [isAuthenticated, user, hasAdminAccess, pathname, router, isHydrated, isTokenExpired, isSessionExpired, logout, updateActivity]);
 
   // Show loading spinner while hydrating or checking authentication
   if (!isHydrated || isLoading) {

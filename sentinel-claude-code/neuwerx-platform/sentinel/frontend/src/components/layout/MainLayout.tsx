@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
 import { useTokenRefresh } from '@/hooks/useTokenRefresh';
+import { useActivityTracker } from '@/hooks/useActivityTracker';
 import { AppHeader } from './AppHeader';
 import { Sidebar } from './Sidebar';
 import { Loader2 } from 'lucide-react';
@@ -26,6 +27,9 @@ export function MainLayout({ children }: MainLayoutProps) {
   
   // Initialize token refresh mechanism
   useTokenRefresh();
+  
+  // Initialize activity tracking for session timeout
+  useActivityTracker();
 
   // Close sidebar when screen size changes to desktop
   useEffect(() => {
