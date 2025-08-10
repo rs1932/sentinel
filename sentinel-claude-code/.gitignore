@@ -157,3 +157,13 @@ logs/
 *.log
 
 .claude
+
+# Next.js
+.next/
+out/
+**/.next/
+**/out/
+
+# Node.js
+node_modules/
+**/node_modules/
