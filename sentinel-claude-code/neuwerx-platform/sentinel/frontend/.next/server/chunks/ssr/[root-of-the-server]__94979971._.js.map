@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 6, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"","debugId":null}},
-    {"offset": {"line": 18, "column": 0}, "map": {"version":3,"sources":["file:///Users/rs/Documents/workspaces/Neuwerx%20Products/sentinel/sentinel-claude-code/neuwerx-platform/sentinel/frontend/src/app/page.tsx"],"sourcesContent":["export default function Home() {\n  return (\n    <div className=\"min-h-screen bg-gray-50 flex items-center justify-center\">\n      <div className=\"text-center\">\n        <h1 className=\"text-4xl font-bold text-gray-900 mb-4\">Sentinel</h1>\n        <p className=\"text-gray-600\">Frontend is working!</p>\n        <div className=\"mt-4\">\n          <a href=\"/auth/login\" className=\"bg-blue-600 text-white px-4 py-2 rounded\">\n            Go to Login\n          </a>\n        </div>\n      </div>\n    </div>\n  );\n}\n"],"names":[],"mappings":";;;;;AAAe,SAAS;IACtB,qBACE,8OAAC;QAAI,WAAU;kBACb,cAAA,8OAAC;YAAI,WAAU;;8BACb,8OAAC;oBAAG,WAAU;8BAAwC;;;;;;8BACtD,8OAAC;oBAAE,WAAU;8BAAgB;;;;;;8BAC7B,8OAAC;oBAAI,WAAU;8BACb,cAAA,8OAAC;wBAAE,MAAK;wBAAc,WAAU;kCAA2C;;;;;;;;;;;;;;;;;;;;;;AAOrF","debugId":null}}]
-}

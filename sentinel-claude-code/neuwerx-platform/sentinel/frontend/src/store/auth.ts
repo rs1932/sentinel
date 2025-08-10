@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { User, AuthTokens, UserRole } from '@/types';
 import { TOKEN_STORAGE_KEY, USER_STORAGE_KEY } from '@/constants';
 import { hasAdminAccess } from '@/lib/auth/adminCheck';
+import { getScopesFromToken } from '@/lib/jwt';
 
 interface AuthState {
   user: User | null;
@@ -85,7 +86,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       login: (user: User, tokens: AuthTokens) => {
         const userRole = determineUserRole(user);
         const expiresAt = Date.now() + (tokens.expires_in * 1000);
-        const adminAccess = hasAdminAccess(user.scopes || []);
+        const scopes = getScopesFromToken(tokens.access_token);
+        const adminAccess = hasAdminAccess(scopes);
         
         set({
           user,
@@ -115,7 +117,9 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 
       setUser: (user: User) => {
         const userRole = determineUserRole(user);
-        const adminAccess = hasAdminAccess(user.scopes || []);
+        const { tokens } = get();
+        const scopes = tokens ? getScopesFromToken(tokens.access_token) : [];
+        const adminAccess = hasAdminAccess(scopes);
         set({ user, userRole, hasAdminAccess: adminAccess });
       },
 
@@ -192,13 +196,16 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       },
 
       checkAdminAccess: () => {
-        const { user } = get();
-        return user ? hasAdminAccess(user.scopes || []) : false;
+        const { tokens } = get();
+        if (!tokens?.access_token) return false;
+        const scopes = getScopesFromToken(tokens.access_token);
+        return hasAdminAccess(scopes);
       },
 
       getUserScopes: () => {
-        const { user } = get();
-        return user?.scopes || [];
+        const { tokens } = get();
+        if (!tokens?.access_token) return [];
+        return getScopesFromToken(tokens.access_token);
       },
     }),
     {
