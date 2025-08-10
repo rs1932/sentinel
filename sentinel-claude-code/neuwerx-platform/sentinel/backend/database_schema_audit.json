@@ -1,0 +1,1002 @@
+{
+  "summary": {
+    "SPEC_MATCH": 55,
+    "EXTRA_FIELD": 19,
+    "MISSING_FIELD": 3,
+    "TYPE_MISMATCH": 42,
+    "EXTRA_TABLE": 3,
+    "MISSING_TABLE": 0
+  },
+  "results": [
+    {
+      "status": "EXTRA_TABLE",
+      "table": "alembic_version",
+      "field": null,
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Table exists in database but not in Modules 1-7 spec"
+    },
+    {
+      "status": "EXTRA_TABLE",
+      "table": "schema_version",
+      "field": null,
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Table exists in database but not in Modules 1-7 spec"
+    },
+    {
+      "status": "EXTRA_TABLE",
+      "table": "permission_cache",
+      "field": null,
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Table exists in database but not in Modules 1-7 spec"
+    },
+    {
+      "status": "EXTRA_FIELD",
+      "table": "token_blacklist",
+      "field": "jti",
+      "spec_value": null,
+      "actual_value": "character varying",
+      "description": "Field exists in database but not in spec"
+    },
+    {
+      "status": "EXTRA_FIELD",
+      "table": "token_blacklist",
+      "field": "id",
+      "spec_value": null,
+      "actual_value": "uuid",
+      "description": "Field exists in database but not in spec"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "token_blacklist",
+      "field": "user_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "token_blacklist",
+      "field": "revoked_by",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "token_blacklist",
+      "field": "expires_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "token_blacklist",
+      "field": "revoked_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "token_blacklist",
+      "field": "reason",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "token_blacklist",
+      "field": "token_type",
+      "spec_value": "VARCHAR(50)",
+      "actual_value": "character varying",
+      "description": "Data type mismatch: spec=varchar(50), actual=varchar"
+    },
+    {
+      "status": "EXTRA_FIELD",
+      "table": "roles",
+      "field": "id",
+      "spec_value": null,
+      "actual_value": "uuid",
+      "description": "Field exists in database but not in spec"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "roles",
+      "field": "type",
+      "spec_value": "sentinel.role_type",
+      "actual_value": "USER-DEFINED",
+      "description": "Data type mismatch: spec=sentinel.role_type, actual=user-defined"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "roles",
+      "field": "is_active",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "roles",
+      "field": "updated_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "roles",
+      "field": "description",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "roles",
+      "field": "name",
+      "spec_value": "VARCHAR(100)",
+      "actual_value": "character varying",
+      "description": "Data type mismatch: spec=varchar(100), actual=varchar"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "roles",
+      "field": "display_name",
+      "spec_value": "VARCHAR(255)",
+      "actual_value": "character varying",
+      "description": "Data type mismatch: spec=varchar(255), actual=varchar"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "roles",
+      "field": "created_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "roles",
+      "field": "tenant_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "roles",
+      "field": "parent_role_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "roles",
+      "field": "priority",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "roles",
+      "field": "role_metadata",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "roles",
+      "field": "created_by",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "roles",
+      "field": "is_assignable",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "MISSING_FIELD",
+      "table": "users",
+      "field": "(is_service_account",
+      "spec_value": "=",
+      "actual_value": null,
+      "description": "Field defined in spec but missing from database"
+    },
+    {
+      "status": "EXTRA_FIELD",
+      "table": "users",
+      "field": "service_account_key",
+      "spec_value": null,
+      "actual_value": "character varying",
+      "description": "Field exists in database but not in spec"
+    },
+    {
+      "status": "EXTRA_FIELD",
+      "table": "users",
+      "field": "id",
+      "spec_value": null,
+      "actual_value": "uuid",
+      "description": "Field exists in database but not in spec"
+    },
+    {
+      "status": "EXTRA_FIELD",
+      "table": "users",
+      "field": "avatar_file_id",
+      "spec_value": null,
+      "actual_value": "character varying",
+      "description": "Field exists in database but not in spec"
+    },
+    {
+      "status": "EXTRA_FIELD",
+      "table": "users",
+      "field": "avatar_url",
+      "spec_value": null,
+      "actual_value": "character varying",
+      "description": "Field exists in database but not in spec"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "users",
+      "field": "is_service_account",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "users",
+      "field": "is_active",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "users",
+      "field": "failed_login_count",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "users",
+      "field": "email",
+      "spec_value": "VARCHAR(255)",
+      "actual_value": "character varying",
+      "description": "Data type mismatch: spec=varchar(255), actual=varchar"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "users",
+      "field": "updated_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "users",
+      "field": "username",
+      "spec_value": "VARCHAR(100)",
+      "actual_value": "character varying",
+      "description": "Data type mismatch: spec=varchar(100), actual=varchar"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "users",
+      "field": "login_count",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "users",
+      "field": "attributes",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "users",
+      "field": "created_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "users",
+      "field": "locked_until",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "users",
+      "field": "tenant_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "users",
+      "field": "preferences",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "users",
+      "field": "password_hash",
+      "spec_value": "VARCHAR(255),",
+      "actual_value": "character varying",
+      "description": "Data type mismatch: spec=varchar(255),, actual=varchar"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "users",
+      "field": "last_login",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "EXTRA_FIELD",
+      "table": "refresh_tokens",
+      "field": "id",
+      "spec_value": null,
+      "actual_value": "uuid",
+      "description": "Field exists in database but not in spec"
+    },
+    {
+      "status": "EXTRA_FIELD",
+      "table": "refresh_tokens",
+      "field": "token_hash",
+      "spec_value": null,
+      "actual_value": "character varying",
+      "description": "Field exists in database but not in spec"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "refresh_tokens",
+      "field": "user_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "refresh_tokens",
+      "field": "expires_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "refresh_tokens",
+      "field": "last_used_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "refresh_tokens",
+      "field": "created_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "refresh_tokens",
+      "field": "device_info",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "MISSING_FIELD",
+      "table": "tenants",
+      "field": "(type",
+      "spec_value": "=",
+      "actual_value": null,
+      "description": "Field defined in spec but missing from database"
+    },
+    {
+      "status": "EXTRA_FIELD",
+      "table": "tenants",
+      "field": "code",
+      "spec_value": null,
+      "actual_value": "character varying",
+      "description": "Field exists in database but not in spec"
+    },
+    {
+      "status": "EXTRA_FIELD",
+      "table": "tenants",
+      "field": "id",
+      "spec_value": null,
+      "actual_value": "uuid",
+      "description": "Field exists in database but not in spec"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "tenants",
+      "field": "type",
+      "spec_value": "sentinel.tenant_type",
+      "actual_value": "USER-DEFINED",
+      "description": "Data type mismatch: spec=sentinel.tenant_type, actual=user-defined"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "tenants",
+      "field": "is_active",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "tenants",
+      "field": "updated_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "tenants",
+      "field": "settings",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "tenants",
+      "field": "name",
+      "spec_value": "VARCHAR(255)",
+      "actual_value": "character varying",
+      "description": "Data type mismatch: spec=varchar(255), actual=varchar"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "tenants",
+      "field": "features",
+      "spec_value": "TEXT[]",
+      "actual_value": "ARRAY",
+      "description": "Data type mismatch: spec=text, actual=array"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "tenants",
+      "field": "created_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "tenants",
+      "field": "tenant_metadata",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "tenants",
+      "field": "parent_tenant_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "tenants",
+      "field": "isolation_mode",
+      "spec_value": "sentinel.isolation_mode",
+      "actual_value": "USER-DEFINED",
+      "description": "Data type mismatch: spec=sentinel.isolation_mode, actual=user-defined"
+    },
+    {
+      "status": "MISSING_FIELD",
+      "table": "permissions",
+      "field": "(resource_id",
+      "spec_value": "IS",
+      "actual_value": null,
+      "description": "Field defined in spec but missing from database"
+    },
+    {
+      "status": "EXTRA_FIELD",
+      "table": "permissions",
+      "field": "id",
+      "spec_value": null,
+      "actual_value": "uuid",
+      "description": "Field exists in database but not in spec"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "permissions",
+      "field": "conditions",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "permissions",
+      "field": "is_active",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "permissions",
+      "field": "updated_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "permissions",
+      "field": "name",
+      "spec_value": "VARCHAR(255)",
+      "actual_value": "character varying",
+      "description": "Data type mismatch: spec=varchar(255), actual=varchar"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "permissions",
+      "field": "created_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "permissions",
+      "field": "field_permissions",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "permissions",
+      "field": "tenant_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "permissions",
+      "field": "resource_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "permissions",
+      "field": "resource_path",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "permissions",
+      "field": "resource_type",
+      "spec_value": "sentinel.resource_type",
+      "actual_value": "USER-DEFINED",
+      "description": "Data type mismatch: spec=sentinel.resource_type, actual=user-defined"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "permissions",
+      "field": "actions",
+      "spec_value": "sentinel.permission_action[]",
+      "actual_value": "ARRAY",
+      "description": "Data type mismatch: spec=sentinel.permission_action[], actual=array"
+    },
+    {
+      "status": "EXTRA_FIELD",
+      "table": "resources",
+      "field": "code",
+      "spec_value": null,
+      "actual_value": "character varying",
+      "description": "Field exists in database but not in spec"
+    },
+    {
+      "status": "EXTRA_FIELD",
+      "table": "resources",
+      "field": "id",
+      "spec_value": null,
+      "actual_value": "uuid",
+      "description": "Field exists in database but not in spec"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "resources",
+      "field": "type",
+      "spec_value": "sentinel.resource_type",
+      "actual_value": "USER-DEFINED",
+      "description": "Data type mismatch: spec=sentinel.resource_type, actual=user-defined"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "resources",
+      "field": "path",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "resources",
+      "field": "is_active",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "resources",
+      "field": "updated_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "resources",
+      "field": "name",
+      "spec_value": "VARCHAR(255)",
+      "actual_value": "character varying",
+      "description": "Data type mismatch: spec=varchar(255), actual=varchar"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "resources",
+      "field": "workflow_enabled",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "resources",
+      "field": "parent_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "resources",
+      "field": "attributes",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "resources",
+      "field": "created_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "resources",
+      "field": "tenant_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "resources",
+      "field": "workflow_config",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "EXTRA_FIELD",
+      "table": "user_groups",
+      "field": "id",
+      "spec_value": null,
+      "actual_value": "uuid",
+      "description": "Field exists in database but not in spec"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "user_groups",
+      "field": "user_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "user_groups",
+      "field": "added_by",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "user_groups",
+      "field": "group_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "user_groups",
+      "field": "added_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "EXTRA_FIELD",
+      "table": "group_roles",
+      "field": "id",
+      "spec_value": null,
+      "actual_value": "uuid",
+      "description": "Field exists in database but not in spec"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "group_roles",
+      "field": "granted_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "group_roles",
+      "field": "group_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "group_roles",
+      "field": "granted_by",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "group_roles",
+      "field": "role_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "EXTRA_FIELD",
+      "table": "role_permissions",
+      "field": "id",
+      "spec_value": null,
+      "actual_value": "uuid",
+      "description": "Field exists in database but not in spec"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "role_permissions",
+      "field": "granted_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "role_permissions",
+      "field": "permission_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "role_permissions",
+      "field": "granted_by",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "role_permissions",
+      "field": "role_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "EXTRA_FIELD",
+      "table": "groups",
+      "field": "id",
+      "spec_value": null,
+      "actual_value": "uuid",
+      "description": "Field exists in database but not in spec"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "groups",
+      "field": "is_active",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "groups",
+      "field": "updated_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "groups",
+      "field": "description",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "groups",
+      "field": "name",
+      "spec_value": "VARCHAR(100)",
+      "actual_value": "character varying",
+      "description": "Data type mismatch: spec=varchar(100), actual=varchar"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "groups",
+      "field": "group_metadata",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "groups",
+      "field": "display_name",
+      "spec_value": "VARCHAR(255)",
+      "actual_value": "character varying",
+      "description": "Data type mismatch: spec=varchar(255), actual=varchar"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "groups",
+      "field": "created_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "groups",
+      "field": "parent_group_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "groups",
+      "field": "tenant_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "EXTRA_FIELD",
+      "table": "user_roles",
+      "field": "id",
+      "spec_value": null,
+      "actual_value": "uuid",
+      "description": "Field exists in database but not in spec"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "user_roles",
+      "field": "user_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "user_roles",
+      "field": "is_active",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "user_roles",
+      "field": "expires_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "TYPE_MISMATCH",
+      "table": "user_roles",
+      "field": "granted_at",
+      "spec_value": "TIMESTAMP",
+      "actual_value": "timestamp with time zone",
+      "description": "Data type mismatch: spec=timestamp, actual=timestamptz"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "user_roles",
+      "field": "granted_by",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    },
+    {
+      "status": "SPEC_MATCH",
+      "table": "user_roles",
+      "field": "role_id",
+      "spec_value": null,
+      "actual_value": null,
+      "description": "Field matches specification"
+    }
+  ],
+  "modules_1_7_tables": {
+    "tenants": "Module 2 - Tenant Management",
+    "users": "Module 3 - User Management",
+    "roles": "Module 4 - Role Management",
+    "user_roles": "Module 4 - User-Role Assignments",
+    "groups": "Module 5 - Group Management",
+    "user_groups": "Module 5 - User-Group Assignments",
+    "group_roles": "Module 5 - Group-Role Assignments",
+    "permissions": "Module 6 - Permission Management",
+    "role_permissions": "Module 6 - Role-Permission Assignments",
+    "resources": "Module 7 - Resource Management",
+    "refresh_tokens": "Module 1 - Authentication",
+    "token_blacklist": "Module 1 - Authentication"
+  }
+}
